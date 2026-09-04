@@ -1,0 +1,104 @@
+{
+  "info": {
+    "_postman_id": "marketpulse-api-v1-collection",
+    "name": "MarketPulse Enterprise Multi-Vendor Marketplace API",
+    "description": "Comprehensive Postman API suite for MarketPulse: RBAC Authentication, Atomic Concurrency Locking, Multi-Vendor Order Partitioning, Webhook Ingress with HMAC-SHA256, Double-Entry Ledger & MongoDB Aggregation Pipelines.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & RBAC",
+      "item": [
+        {
+          "name": "1-Click Demo Login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"admin\"}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "1-Click Demo Login (Tech Vendor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"tech_vendor\"}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "1-Click Demo Login (Shopper Customer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"shopper\"}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile (/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products & Faceted Search",
+      "item": [
+        {
+          "name": "Search Products (Faceted Filter & Search)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products?search=audio&category=Audio", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Multi-Vendor Orders & Idempotency",
+      "item": [
+        {
+          "name": "Create Order (Atomic Stock Reservation + Partitioning)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Idempotency-Key", "value": "idemp_test_order_key_001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"items\": [{\"productId\": \"...\", \"quantity\": 1, \"title\": \"...\"}]}"
+            },
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] }
+          }
+        }
+      ]
+    }
+  ]
+}

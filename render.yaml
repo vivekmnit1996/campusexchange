@@ -1,0 +1,39 @@
+services:
+  # MarketPulse Backend API
+  - type: web
+    name: marketpulse-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: marketpulse-ai-service
+          property: host
+
+  # MarketPulse LangGraph AI Microservice
+  - type: web
+    name: marketpulse-ai-service
+    env: node
+    rootDir: ai-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false

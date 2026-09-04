@@ -1,0 +1,285 @@
+{
+  "info": {
+    "_postman_id": "marketpulse-api-v1-collection",
+    "name": "MarketPulse Enterprise Multi-Vendor Marketplace API",
+    "description": "Comprehensive Postman API suite for MarketPulse: RBAC Authentication, Atomic Concurrency Locking, Multi-Vendor Order Partitioning, Webhook Ingress with HMAC-SHA256, Double-Entry Ledger & MongoDB Aggregation Pipelines.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & RBAC",
+      "item": [
+        {
+          "name": "1-Click Demo Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Saved Admin JWT Token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({ "role": "admin" })
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "1-Click Demo Login (Tech Vendor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Saved Vendor JWT Token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({ "role": "tech_vendor" })
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "1-Click Demo Login (Shopper Customer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Saved Customer JWT Token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({ "role": "shopper" })
+            },
+            "url": { "raw": "{{baseUrl}}/auth/demo-login", "host": ["{{baseUrl}}"], "path": ["auth", "demo-login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile (/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products & Faceted Search",
+      "item": [
+        {
+          "name": "Search Products (Faceted Filter & Search)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?search=wireless&category=Audio&minPrice=50&maxPrice=500&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "search", "value": "wireless" },
+                { "key": "category", "value": "Audio" },
+                { "key": "minPrice", "value": "50" },
+                { "key": "maxPrice", "value": "500" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/:id", "host": ["{{baseUrl}}"], "path": ["products", ":id"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Multi-Vendor Orders & Idempotency",
+      "item": [
+        {
+          "name": "Create Order (Atomic Stock Reservation + Partitioning)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Idempotency-Key", "value": "idemp_test_order_key_001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({
+                "items": [
+                  { "productId": "6a92a0f65a0b516322c4cb40", "quantity": 1, "title": "Neural ANC Studio Pro Headphones" },
+                  { "productId": "6a92a0f65a0b516322c4cb43", "quantity": 2, "title": "Full-Grain Tuscan Leather Desk Pad" }
+                ],
+                "customerInfo": {
+                  "name": "Alex Rivera",
+                  "email": "customer@marketpulse.io",
+                  "address": "742 Evergreen Terrace",
+                  "city": "Seattle",
+                  "postalCode": "98101",
+                  "country": "USA"
+                },
+                "paymentMethod": "credit_card"
+              })
+            },
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Get My Orders (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/mine", "host": ["{{baseUrl}}"], "path": ["orders", "mine"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Vendor Fulfillment & Sub-Orders",
+      "item": [
+        {
+          "name": "Vendor Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/vendor/dashboard", "host": ["{{baseUrl}}"], "path": ["vendor", "dashboard"] }
+          }
+        },
+        {
+          "name": "Vendor Sub-Orders List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/vendor/sub-orders", "host": ["{{baseUrl}}"], "path": ["vendor", "sub-orders"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Analytics Aggregations (MongoDB Pipelines)",
+      "item": [
+        {
+          "name": "Platform GMV & Vendor Leaderboard (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/analytics/platform", "host": ["{{baseUrl}}"], "path": ["analytics", "platform"] }
+          }
+        },
+        {
+          "name": "Vendor Sales & Product Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/analytics/vendor", "host": ["{{baseUrl}}"], "path": ["analytics", "vendor"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Webhook Ingress (HMAC-SHA256)",
+      "item": [
+        {
+          "name": "Payment Webhook Endpoint (HMAC Signature Protected)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-MarketPulse-Signature", "value": "3958cfa9d6bf394e33..." }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({
+                "id": "evt_mock_payment_9941",
+                "type": "payment_intent.succeeded",
+                "data": { "orderNumber": "MP-DEMO-2026-8812", "amount": 52799, "currency": "usd" }
+              })
+            },
+            "url": { "raw": "{{baseUrl}}/webhooks/payment", "host": ["{{baseUrl}}"], "path": ["webhooks", "payment"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Concurrency & Stress Testing DevTools",
+      "item": [
+        {
+          "name": "Simulate 20 Concurrent Checkouts (Zero Oversell Test)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({ "initialStock": 3, "concurrentRequests": 20 })
+            },
+            "url": { "raw": "{{baseUrl}}/devtools/simulate-concurrency", "host": ["{{baseUrl}}"], "path": ["devtools", "simulate-concurrency"] }
+          }
+        },
+        {
+          "name": "Generate Signed HMAC Webhook Payload",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": JSON.stringify({ "orderNumber": "MP-DEMO-2026-8812", "amount": 527.99, "tamperSignature": false })
+            },
+            "url": { "raw": "{{baseUrl}}/devtools/emit-webhook", "host": ["{{baseUrl}}"], "path": ["devtools", "emit-webhook"] }
+          }
+        }
+      ]
+    }
+  ]
+}

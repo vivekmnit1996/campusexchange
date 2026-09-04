@@ -1,0 +1,276 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brutal-bg: #5B85FA;
+  --brutal-card-bg: #FFFFFF;
+  --brutal-text: #000000;
+  --brutal-border: #000000;
+  --brutal-shadow: #000000;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+.dark {
+  --brutal-bg: #090A10;
+  --brutal-card-bg: #161A2B;
+  --brutal-text: #F8FAFC;
+  --brutal-border: #000000;
+  --brutal-shadow: #000000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--brutal-bg);
+  color: var(--brutal-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Light retro grid */
+.brutal-grid-bg {
+  background-color: #5B85FA;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.15) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Dark sexy cyber grid */
+.dark .brutal-grid-bg {
+  background-color: #090A10;
+  background-image: 
+    linear-gradient(rgba(255, 42, 133, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ═══════════════════════════════════════════════
+   NEO-BRUTALISM & CYBER-BRUTALISM DESIGN SYSTEM
+   ═══════════════════════════════════════════════ */
+
+/* Surface Cards with Heavy Black Borders & Hard Shadow */
+.neo-card {
+  background: #FFFFFF;
+  color: #000000;
+  border: 2.5px solid #000000;
+  border-radius: 20px;
+  box-shadow: 5px 5px 0px 0px #000000;
+  transition: all 0.15s ease;
+}
+
+.dark .neo-card {
+  background: #161A2B;
+  color: #F8FAFC;
+  border: 2.5px solid #000000;
+  box-shadow: 5px 5px 0px 0px #000000, 0 0 0 1.5px rgba(255, 255, 255, 0.16);
+}
+
+.neo-card-interactive {
+  background: #FFFFFF;
+  color: #000000;
+  border: 2.5px solid #000000;
+  border-radius: 20px;
+  box-shadow: 5px 5px 0px 0px #000000;
+  transition: all 0.15s ease;
+}
+
+.dark .neo-card-interactive {
+  background: #161A2B;
+  color: #F8FAFC;
+  border: 2.5px solid #000000;
+  box-shadow: 5px 5px 0px 0px #000000, 0 0 0 1.5px rgba(255, 255, 255, 0.16);
+}
+
+.neo-card-interactive:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px 0px #000000;
+}
+
+.dark .neo-card-interactive:hover {
+  border-color: #000000;
+  box-shadow: 7px 7px 0px 0px #000000, 0 0 20px rgba(0, 240, 255, 0.35);
+}
+
+.neo-card-interactive:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+/* Badges / Stickers */
+.neo-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px 0px #000000;
+  color: #000000;
+}
+
+.neo-badge-indigo {
+  background: #C4B5FD;
+}
+.dark .neo-badge-indigo {
+  background: #B026FF;
+  color: #FFFFFF;
+}
+
+.neo-badge-emerald {
+  background: #6EE7B7;
+}
+.dark .neo-badge-emerald {
+  background: #00FF87;
+  color: #000000;
+}
+
+.neo-badge-amber {
+  background: #FEF08A;
+}
+.dark .neo-badge-amber {
+  background: #FFE600;
+  color: #000000;
+}
+
+.neo-badge-rose {
+  background: #FF6B97;
+}
+.dark .neo-badge-rose {
+  background: #FF2A85;
+  color: #FFFFFF;
+}
+
+.neo-badge-muted {
+  background: #F3F4F6;
+}
+.dark .neo-badge-muted {
+  background: #252A42;
+  color: #E2E8F0;
+}
+
+/* Buttons */
+.neo-btn-primary {
+  background: #FEF08A;
+  color: #000000;
+  font-family: var(--font-display);
+  font-weight: 800;
+  border: 2.5px solid #000000;
+  border-radius: 12px;
+  padding: 8px 18px;
+  box-shadow: 4px 4px 0px 0px #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dark .neo-btn-primary {
+  background: #FFE600;
+  color: #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.neo-btn-primary:hover {
+  background: #FDE047;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px #000000;
+}
+
+.dark .neo-btn-primary:hover {
+  background: #FFF500;
+  box-shadow: 5px 5px 0px 0px #000000, 0 0 15px rgba(255, 230, 0, 0.4);
+}
+
+.neo-btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+
+.neo-btn-secondary {
+  background: #FFFFFF;
+  color: #000000;
+  font-family: var(--font-display);
+  font-weight: 700;
+  border: 2.5px solid #000000;
+  border-radius: 12px;
+  padding: 8px 18px;
+  box-shadow: 3px 3px 0px 0px #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dark .neo-btn-secondary {
+  background: #252A42;
+  color: #FFFFFF;
+  border: 2.5px solid #000000;
+  box-shadow: 3px 3px 0px 0px #000000, 0 0 0 1.5px rgba(255, 255, 255, 0.15);
+}
+
+.neo-btn-secondary:hover {
+  background: #F3F4F6;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.dark .neo-btn-secondary:hover {
+  background: #313757;
+}
+
+.neo-btn-secondary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+
+/* Typography */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFFFF;
+  border-left: 2px solid #000000;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #090A10;
+  border-left: 2px solid #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #FEF08A;
+  border: 2px solid #000000;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #FF2A85;
+}
+
+/* Animations */
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-pop-in {
+  animation: popIn 0.15s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: popIn 0.15s ease-out forwards;
+}

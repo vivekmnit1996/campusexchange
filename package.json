@@ -1,0 +1,15 @@
+{
+  "name": "marketpulse-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise Multi-Vendor Marketplace & Order Orchestration Engine (Backend-Heavy MERN Stack)",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\" \"npm run dev --prefix ai-service\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend && npm install --prefix ai-service",
+    "seed": "npm run seed --prefix backend",
+    "test:concurrency": "node backend/scripts/testConcurrency.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
