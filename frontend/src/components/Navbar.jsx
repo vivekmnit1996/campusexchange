@@ -1,31 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import { useWishlist } from '../context/WishlistContext';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
 import {
   ShoppingBag,
-  Store,
-  BarChart3,
-  Zap,
-  ChevronDown,
+  Plus,
   Layers,
-  FileCode,
-  LogOut,
+  Sparkles,
   User,
-  Heart,
-  Menu,
-  X,
+  ShieldCheck,
+  ChevronDown,
+  LogOut,
   Sun,
   Moon,
-  Sparkles,
-  ShieldCheck,
+  Menu,
+  X,
+  Package,
 } from 'lucide-react';
 
-export const Navbar = ({ currentTab, setCurrentTab, onOpenCart, onOpenApiDocs, onOpenAi }) => {
-  const { user, logout } = useAuth();
-  const { totalItemCount } = useCart();
-  const { wishlistCount } = useWishlist();
+export const Navbar = ({
+  currentTab,
+  setCurrentTab,
+  onOpenCreateListing,
+  onOpenAi,
+}) => {
+  const { user, logout, setUser, refreshUser } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,301 +40,271 @@ export const Navbar = ({ currentTab, setCurrentTab, onOpenCart, onOpenApiDocs, o
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Tailored Navigation Items by Role
-  const navItems =
-    user?.role === 'vendor'
-      ? [
-          { id: 'vendor', label: 'Vendor Workspace', icon: Store, color: 'bg-[#6EE7B7] dark:bg-[#00FF87] text-black' },
-          { id: 'store', label: 'Marketplace Preview', icon: ShoppingBag, color: 'bg-[#FEF08A] dark:bg-[#FFE600] text-black' },
-        ]
-      : user?.role === 'admin'
-      ? [
-          { id: 'admin', label: 'Platform Console', icon: BarChart3, color: 'bg-[#FEF08A] dark:bg-[#FFE600] text-black' },
-          { id: 'vendor', label: 'Vendor Oversight', icon: Store, color: 'bg-[#6EE7B7] dark:bg-[#00FF87] text-black' },
-          { id: 'concurrency', label: 'Concurrency Lab', icon: Zap, color: 'bg-[#FF6B97] dark:bg-[#FF2A85] text-white' },
-          { id: 'store', label: 'Live Catalog', icon: ShoppingBag, color: 'bg-[#C4B5FD] dark:bg-[#B026FF] text-black dark:text-white' },
-        ]
-      : [
-          { id: 'store', label: 'Storefront', icon: ShoppingBag, color: 'bg-[#FEF08A] dark:bg-[#FFE600] text-black' },
-          { id: 'wishlist', label: 'Wishlist', icon: Heart, count: wishlistCount, color: 'bg-[#FF6B97] dark:bg-[#FF2A85] text-white dark:text-white' },
-          { id: 'orders', label: 'My Orders', icon: Layers, color: 'bg-[#C4B5FD] dark:bg-[#B026FF] text-black dark:text-white' },
-        ];
-
-  const handleBrandClick = () => {
-    if (user?.role === 'vendor') setCurrentTab('vendor');
-    else if (user?.role === 'admin') setCurrentTab('admin');
-    else setCurrentTab('store');
-  };
-
   return (
-    <header className="sticky top-0 z-40 bg-[#FFFFFF] dark:bg-[#121522] border-b-3 border-black shadow-brutal mb-6 transition-colors duration-200">
+    <header className="sticky top-0 z-40 bg-white dark:bg-[#121522] border-b-3 border-black shadow-brutal mb-6 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand */}
+        {/* Brand: CampusExchange */}
         <div
+          onClick={() => setCurrentTab('marketplace')}
           className="flex items-center space-x-3 cursor-pointer group"
-          onClick={handleBrandClick}
         >
           <div className="w-10 h-10 rounded-xl bg-[#FEF08A] dark:bg-[#FFE600] border-2.5 border-black shadow-brutal-sm flex items-center justify-center text-black font-display font-black text-sm group-hover:rotate-6 transition">
-            MP
+            CX
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-lg font-display font-black tracking-tight text-black dark:text-white">
-              MarketPulse
-            </span>
-            <span className="px-2 py-0.5 rounded-md bg-[#6EE7B7] dark:bg-[#00FF87] border-2 border-black text-[10px] font-mono font-black uppercase text-black shadow-[1px_1px_0px_0px_#000] hidden sm:inline-flex">
-              {user?.role === 'vendor' ? 'Vendor Hub' : user?.role === 'admin' ? 'Admin Console' : isDark ? 'Cyber Dark' : 'Neubrutal'}
-            </span>
+          <div>
+            <div className="text-lg font-display font-black tracking-tight text-black dark:text-white">
+              CampusExchange
+            </div>
+            <div className="text-[10px] font-mono font-bold text-black/60 dark:text-white/60 -mt-1 hidden sm:block">
+              MNIT Jaipur • Student P2P
+            </div>
           </div>
         </div>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation: Section 10 */}
         <nav className="hidden md:flex items-center space-x-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentTab(item.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black ${
-                  isActive
-                    ? `${item.color} shadow-brutal translate-x-[-1px] translate-y-[-1px]`
-                    : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px]'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
-                {item.count > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-black text-white text-[10px] font-mono font-black">
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+          {/* Marketplace */}
+          <button
+            onClick={() => setCurrentTab('marketplace')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black cursor-pointer ${
+              currentTab === 'marketplace'
+                ? 'bg-[#FEF08A] dark:bg-[#FFE600] text-black shadow-brutal translate-x-[-1px] translate-y-[-1px]'
+                : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Marketplace</span>
+          </button>
 
-        {/* Right Actions */}
-        <div className="flex items-center space-x-2.5">
-          {/* AI Assistant Launcher */}
+          {/* Sell Item Action */}
+          <button
+            onClick={onOpenCreateListing}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-display font-black bg-[#6EE7B7] hover:bg-[#34D399] dark:bg-[#00FF87] text-black border-2 border-black shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] transition flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Sell Item</span>
+          </button>
+
+          {/* My Listings */}
+          <button
+            onClick={() => setCurrentTab('my-listings')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black cursor-pointer ${
+              currentTab === 'my-listings'
+                ? 'bg-[#6EE7B7] dark:bg-[#00FF87] text-black shadow-brutal translate-x-[-1px] translate-y-[-1px]'
+                : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>My Listings</span>
+          </button>
+
+          {/* My Purchases */}
+          <button
+            onClick={() => setCurrentTab('my-purchases')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black cursor-pointer ${
+              currentTab === 'my-purchases'
+                ? 'bg-[#C4B5FD] text-black shadow-brutal translate-x-[-1px] translate-y-[-1px]'
+                : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>My Purchases</span>
+          </button>
+
+          {/* Campus AI */}
           <button
             onClick={onOpenAi}
-            className="px-3 py-1.5 rounded-xl bg-[#A78BFA] hover:bg-[#8B5CF6] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white font-display font-black text-xs border-2 border-black shadow-brutal-sm hover:scale-105 active:translate-x-[2px] transition flex items-center space-x-1.5 cursor-pointer"
-            title="Ask MarketPulse AI Assistant (LangGraph + Groq)"
+            className="px-3 py-1.5 rounded-xl bg-[#A78BFA] hover:bg-[#8B5CF6] dark:bg-[#7C3AED] text-white font-display font-black text-xs border-2 border-black shadow-brutal-sm hover:scale-105 transition flex items-center space-x-1.5 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#FEF08A] animate-pulse" />
-            <span className="hidden sm:inline">AI Pulse</span>
+            <span>Campus AI</span>
           </button>
 
-          {/* Dark / Light Theme Toggle */}
+          {/* Profile */}
+          <button
+            onClick={() => setCurrentTab('profile')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black cursor-pointer ${
+              currentTab === 'profile'
+                ? 'bg-[#FF6B97] text-white shadow-brutal translate-x-[-1px] translate-y-[-1px]'
+                : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Profile</span>
+          </button>
+
+          {/* Admin (Only for admin users) */}
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => setCurrentTab('admin')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold flex items-center space-x-1.5 transition border-2 border-black cursor-pointer ${
+                currentTab === 'admin'
+                  ? 'bg-[#67E8F9] text-black shadow-brutal translate-x-[-1px] translate-y-[-1px]'
+                  : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white hover:bg-slate-100 dark:hover:bg-[#252A42] shadow-brutal-sm'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Admin</span>
+            </button>
+          )}
+        </nav>
+
+        {/* Right Actions: Theme Toggle & User Info */}
+        <div className="flex items-center space-x-2.5">
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="px-3 py-1.5 rounded-xl bg-[#FEF08A] dark:bg-[#FFE600] text-black font-display font-black text-xs border-2 border-black shadow-brutal-sm hover:scale-105 active:translate-x-[2px] transition flex items-center space-x-1.5 cursor-pointer"
-            title={isDark ? 'Switch to Light Theme' : 'Switch to Cyber Dark Theme'}
+            className="p-2 rounded-xl bg-[#FEF08A] dark:bg-[#FFE600] text-black border-2 border-black shadow-brutal-sm hover:scale-105 transition cursor-pointer"
+            title={isDark ? 'Switch to Light' : 'Switch to Cyber Dark'}
           >
-            {isDark ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-black fill-current" />
-                <span className="hidden sm:inline">Light Mode</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-black fill-current" />
-                <span className="hidden sm:inline">Cyber Dark</span>
-              </>
-            )}
-          </button>
-
-          {/* Wishlist button (Customers Only) */}
-          {user?.role === 'customer' && (
-            <button
-              onClick={() => setCurrentTab('wishlist')}
-              className={`relative p-2 rounded-xl border-2 border-black transition ${
-                currentTab === 'wishlist'
-                  ? 'bg-[#FF6B97] dark:bg-[#FF2A85] text-white shadow-brutal'
-                  : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white shadow-brutal-sm hover:bg-[#FBCFE8] dark:hover:bg-[#FF2A85]/20'
-              }`}
-              title="My Wishlist"
-            >
-              <Heart className="w-4 h-4" />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black dark:bg-[#FF2A85] text-white text-[10px] font-mono font-black flex items-center justify-center border border-white">
-                  {wishlistCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Cart (Customers Only) */}
-          {user?.role === 'customer' && (
-            <button
-              onClick={onOpenCart}
-              className="relative p-2 rounded-xl bg-[#FEF08A] dark:bg-[#FFE600] border-2 border-black shadow-brutal-sm hover:bg-[#FDE047] text-black transition"
-              title="Shopping Cart"
-            >
-              <ShoppingBag className="w-4 h-4 text-black" />
-              {totalItemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black text-white text-[10px] font-mono font-black flex items-center justify-center border border-white">
-                  {totalItemCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* API Docs & Postman (Admin Only) */}
-          {user?.role === 'admin' && (
-            <button
-              onClick={onOpenApiDocs}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-display font-bold bg-[#67E8F9] dark:bg-[#00F0FF] border-2 border-black shadow-brutal-sm text-black hover:bg-[#38BDF8] transition"
-            >
-              <FileCode className="w-4 h-4 text-black" />
-              <span className="hidden sm:inline">REST Docs</span>
-            </button>
-          )}
-
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl bg-white dark:bg-[#1A1E30] border-2 border-black shadow-brutal-sm text-black dark:text-white"
-          >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {isDark ? <Sun className="w-4 h-4 fill-current" /> : <Moon className="w-4 h-4 fill-current" />}
           </button>
 
           {/* User Menu */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#1A1E30] border-2 border-black shadow-brutal-sm hover:bg-slate-50 dark:hover:bg-[#252A42] transition text-black dark:text-white"
+              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#1A1E30] border-2 border-black shadow-brutal-sm hover:bg-slate-50 dark:hover:bg-[#252A42] transition text-black dark:text-white cursor-pointer"
             >
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-5 h-5 rounded-full object-cover border border-black" />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-[#FEF08A] dark:bg-[#FFE600] border border-black flex items-center justify-center">
-                  <User className="w-3 h-3 text-black" />
-                </div>
-              )}
+              <div className="w-5 h-5 rounded-full bg-[#FEF08A] dark:bg-[#FFE600] border border-black flex items-center justify-center font-black text-[10px] text-black">
+                {user?.name ? user.name[0].toUpperCase() : 'S'}
+              </div>
               <span className="text-xs font-display font-bold text-black dark:text-white truncate max-w-[90px] hidden sm:block">
                 {user?.name}
               </span>
-              <ChevronDown className="w-3 h-3 text-black dark:text-white" />
+              <ChevronDown className="w-3 h-3" />
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#121522] border-3 border-black rounded-2xl shadow-brutal-lg p-2 z-50 animate-pop-in">
-                {/* User info */}
-                <div className="p-3 bg-[#FEF08A] dark:bg-[#1A1E30] border-2 border-black rounded-xl mb-2 text-black dark:text-white">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#121522] border-3 border-black rounded-2xl shadow-brutal-lg p-2 z-50 animate-pop-in text-black dark:text-white">
+                <div className="p-3 bg-[#FEF08A] dark:bg-[#1A1E30] border-2 border-black rounded-xl mb-2">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-display font-black">{user?.name}</div>
-                      <div className="text-[10px] opacity-70 font-mono font-bold truncate">{user?.email}</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-md bg-black text-white text-[10px] font-mono font-black uppercase">
-                      {user?.role}
+                    <div className="text-xs font-display font-black truncate">{user?.name}</div>
+                    <span className="px-1.5 py-0.2 rounded bg-black text-white text-[9px] font-mono font-bold uppercase">
+                      {user?.role === 'ADMIN' ? 'Admin' : 'Student'}
                     </span>
                   </div>
-                  {user?.store && (
-                    <div className="mt-1.5 text-[10px] font-bold flex items-center gap-1.5 text-black dark:text-white">
-                      <Store className="w-3 h-3" />
-                      <span>{user.store.name}</span>
-                    </div>
-                  )}
+                  <div className="text-[10px] opacity-70 font-mono truncate">{user?.email}</div>
+                  <div className="mt-1 text-[10px] font-mono font-bold text-black/80 dark:text-slate-300">
+                    {user?.college || 'MNIT Jaipur'} • {user?.hostel || 'Hostel 5'}
+                  </div>
                 </div>
 
-                {/* Role Specific Quick Links */}
-                {user?.role === 'customer' && (
-                  <button
-                    onClick={() => {
-                      setCurrentTab('wishlist');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F3F4F6] dark:hover:bg-[#1A1E30] transition flex items-center space-x-2 text-xs font-bold text-black dark:text-white"
-                  >
-                    <Heart className="w-4 h-4 text-[#FF6B97] dark:text-[#FF2A85]" />
-                    <span>My Wishlist ({wishlistCount})</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setCurrentTab('profile');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-[#1A1E30] transition text-xs font-bold"
+                >
+                  View Profile
+                </button>
 
-                {user?.role === 'vendor' && (
-                  <button
-                    onClick={() => {
-                      setCurrentTab('vendor');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F3F4F6] dark:hover:bg-[#1A1E30] transition flex items-center space-x-2 text-xs font-bold text-black dark:text-white"
-                  >
-                    <Store className="w-4 h-4 text-[#6EE7B7] dark:text-[#00FF87]" />
-                    <span>Vendor Workspace</span>
-                  </button>
-                )}
-
-                {user?.role === 'admin' && (
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => {
-                        setCurrentTab('admin');
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F3F4F6] dark:hover:bg-[#1A1E30] transition flex items-center space-x-2 text-xs font-bold text-black dark:text-white"
-                    >
-                      <BarChart3 className="w-4 h-4 text-[#FEF08A] dark:text-[#FFE600]" />
-                      <span>Platform Analytics Hub</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCurrentTab('concurrency');
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F3F4F6] dark:hover:bg-[#1A1E30] transition flex items-center space-x-2 text-xs font-bold text-black dark:text-white"
-                    >
-                      <Zap className="w-4 h-4 text-[#FF6B97] dark:text-[#FF2A85]" />
-                      <span>Concurrency & Webhook Lab</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Logout */}
                 <button
                   onClick={() => {
                     logout();
                     setShowUserMenu(false);
                   }}
-                  className="w-full text-left px-3 py-2 rounded-xl bg-[#FF6B97]/20 dark:bg-[#FF2A85]/20 hover:bg-[#FF6B97] dark:hover:bg-[#FF2A85] hover:text-white border-2 border-black transition flex items-center space-x-2 text-xs font-bold text-black dark:text-white mt-2"
+                  className="w-full text-left px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition text-xs font-bold flex items-center space-x-1.5 mt-1"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
                   <span>Sign Out</span>
                 </button>
               </div>
             )}
           </div>
+
+          {/* Mobile menu hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl bg-white dark:bg-[#1A1E30] border-2 border-black shadow-brutal-sm text-black dark:text-white cursor-pointer"
+          >
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t-2 border-black bg-white dark:bg-[#121522] px-4 py-3 space-y-2 animate-pop-in">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => { setCurrentTab(item.id); setMobileMenuOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl text-xs font-display font-bold flex items-center justify-between border-2 border-black ${
-                  isActive ? `${item.color} shadow-brutal-sm` : 'bg-white dark:bg-[#1A1E30] text-black dark:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </div>
-                {item.count > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-black text-white text-[10px] font-mono font-bold">
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          <button
+            onClick={() => {
+              setCurrentTab('marketplace');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-white dark:bg-[#1A1E30] text-black dark:text-white"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Marketplace</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onOpenCreateListing();
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-[#6EE7B7] text-black font-black"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Sell Item</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentTab('my-listings');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-white dark:bg-[#1A1E30] text-black dark:text-white"
+          >
+            <Package className="w-4 h-4" />
+            <span>My Listings</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentTab('my-purchases');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-white dark:bg-[#1A1E30] text-black dark:text-white"
+          >
+            <Layers className="w-4 h-4" />
+            <span>My Purchases</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onOpenAi();
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-[#A78BFA] text-white font-black"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Campus AI</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentTab('profile');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-white dark:bg-[#1A1E30] text-black dark:text-white"
+          >
+            <User className="w-4 h-4" />
+            <span>Profile</span>
+          </button>
+
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => {
+                setCurrentTab('admin');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full px-3 py-2 rounded-xl text-xs font-bold border-2 border-black text-left flex items-center space-x-2 bg-[#67E8F9] text-black font-black"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Admin Console</span>
+            </button>
+          )}
         </div>
       )}
     </header>

@@ -1,16 +1,30 @@
 import express from 'express';
-import { createOrder, getMyOrders, getOrderById, cancelOrder } from '../controllers/orderController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { idempotencyMiddleware } from '../middleware/idempotencyMiddleware.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
+import {
+  createRequest,
+  getBuyerRequests,
+  getSellerRequests,
+  getRequestById,
+  acceptRequest,
+  rejectRequest,
+  cancelRequest,
+  completeRequest,
+} from '../controllers/requestController.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
+import { validate, purchaseRequestSchema } from '../middleware/validate.js';
 
 const router = express.Router();
 
-const orderLimiter = rateLimiter({ windowMs: 60 * 1000, max: 30, message: 'Checkout rate limit reached.' });
+router.use(protect);
 
-router.post('/', protect, orderLimiter, idempotencyMiddleware, createOrder);
-router.get('/mine', protect, getMyOrders);
-router.get('/:id', protect, getOrderById);
-router.patch('/:id/cancel', protect, cancelOrder);
+router.post('/', validate(purchaseRequestSchema), createRequest);
+router.get('/buyer', getBuyerRequests);
+router.get('/seller', getSellerRequests);
+router.get('/mine', getBuyerRequests); // compatibility alias
+router.get('/seller-requests', getSellerRequests); // compatibility alias
+router.get('/:id', getRequestById);
+router.patch('/:id/accept', acceptRequest);
+router.patch('/:id/reject', rejectRequest);
+router.patch('/:id/cancel', cancelRequest);
+router.patch('/:id/complete', completeRequest);
 
 export default router;

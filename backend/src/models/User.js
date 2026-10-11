@@ -1,18 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const addressSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    country: { type: String, default: 'United States' },
-    isDefault: { type: Boolean, default: false },
-  },
-  { _id: true }
-);
-
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -38,37 +26,51 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['customer', 'vendor', 'admin'],
-      default: 'customer',
+      enum: ['STUDENT', 'BUYER', 'SELLER', 'ADMIN'],
+      default: 'STUDENT',
       index: true,
     },
     avatar: {
       type: String,
       default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
     },
-    walletBalance: {
-      type: Number,
-      default: 0.0,
-      min: [0, 'Wallet balance cannot be negative'],
+    college: {
+      type: String,
+      default: 'MNIT Jaipur',
+      trim: true,
     },
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Store',
+    branch: {
+      type: String,
+      default: 'Computer Science & Engineering',
+      trim: true,
     },
-    wishlist: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-      },
-    ],
-    savedAddresses: [addressSchema],
+    year: {
+      type: String,
+      default: '3rd Year',
+      trim: true,
+    },
+    hostel: {
+      type: String,
+      default: 'Hostel 5',
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Password hash middleware
+// Hash password before save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -77,8 +79,8 @@ userSchema.pre('save', async function (next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 export const User = mongoose.model('User', userSchema);

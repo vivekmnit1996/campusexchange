@@ -1,64 +1,23 @@
 import mongoose from 'mongoose';
 
-const reviewSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-    comment: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
 const productSchema = new mongoose.Schema(
   {
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Seller is required'],
+      index: true,
+    },
     title: {
       type: String,
-      required: [true, 'Product title is required'],
+      required: [true, 'Title is required'],
       trim: true,
       maxlength: [150, 'Title cannot exceed 150 characters'],
     },
-    slug: {
-      type: String,
-      required: true,
-      lowercase: true,
-    },
     description: {
       type: String,
-      required: [true, 'Product description is required'],
-    },
-    price: {
-      type: Number,
-      required: [true, 'Price is required'],
-      min: [0, 'Price cannot be negative'],
-    },
-    compareAtPrice: {
-      type: Number,
-      min: [0, 'Compare price cannot be negative'],
-    },
-    stock: {
-      type: Number,
-      required: [true, 'Stock count is required'],
-      min: [0, 'Stock count cannot be negative'],
-      default: 0,
+      required: [true, 'Description is required'],
+      trim: true,
     },
     category: {
       type: String,
@@ -66,48 +25,56 @@ const productSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    price: {
+      type: Number,
+      required: [true, 'Price is required'],
+      min: [0, 'Price cannot be negative'],
+      index: true,
+    },
+    condition: {
+      type: String,
+      enum: ['New', 'Like New', 'Good', 'Fair'],
+      default: 'Good',
+      index: true,
+    },
+    image: {
+      type: String,
+      default: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+    },
     images: [
       {
         type: String,
-        required: true,
       },
     ],
-    store: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Store',
-      required: [true, 'Product must belong to a store'],
+    imagePublicId: {
+      type: String,
+      default: '',
+    },
+    pickupLocation: {
+      type: String,
+      default: 'Campus Hostel Gate',
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: ['AVAILABLE', 'RESERVED', 'SOLD'],
+      default: 'AVAILABLE',
       index: true,
     },
-    rating: {
+    quantity: {
       type: Number,
-      default: 5.0,
-      min: 0,
-      max: 5,
+      default: 1,
+      min: [0, 'Quantity cannot be negative'],
     },
-    numReviews: {
+    stock: {
       type: Number,
-      default: 0,
+      default: 1,
+      min: [0, 'Stock cannot be negative'],
     },
-    reviews: [reviewSchema],
-    isActive: {
-      type: Boolean,
-      default: true,
-      index: true,
-    },
-    isFeatured: {
-      type: Boolean,
-      default: false,
-    },
-    attributes: {
-      type: Map,
-      of: String,
-      default: {},
+    reasonForSelling: {
+      type: String,
+      default: 'Graduating',
+      trim: true,
     },
   },
   {
@@ -115,16 +82,28 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Full text search compound index
-productSchema.index({
-  title: 'text',
-  description: 'text',
-  category: 'text',
-  tags: 'text',
-});
+// Compound and text indexes for search and filtering
+productSchema.index({ status: 1, category: 1, price: 1 });
+productSchema.index({ seller: 1, status: 1 });
+productSchema.index({ title: 'text', description: 'text' });
 
-// Compound index for category and pricing filtering
-productSchema.index({ category: 1, price: 1, isActive: 1 });
-productSchema.index({ store: 1, createdAt: -1 });
+// Ensure image & images stay in sync, and quantity & stock stay in sync
+productSchema.pre('save', function (next) {
+  if (this.image && (!this.images || this.images.length === 0)) {
+    this.images = [this.image];
+  } else if ((!this.image || this.image === '') && this.images && this.images.length > 0) {
+    this.image = this.images[0];
+  }
+
+  // Synchronize quantity and stock
+  if (this.quantity !== undefined && this.stock === undefined) {
+    this.stock = this.quantity;
+  } else if (this.stock !== undefined && this.quantity === undefined) {
+    this.quantity = this.stock;
+  } else if (this.quantity !== undefined && this.stock !== undefined) {
+    this.stock = this.quantity;
+  }
+  next();
+});
 
 export const Product = mongoose.model('Product', productSchema);

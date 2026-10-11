@@ -1,22 +1,17 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import { WishlistProvider } from './context/WishlistContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthPage } from './components/AuthPage';
 import { Navbar } from './components/Navbar';
 import { StorefrontView } from './components/StorefrontView';
-import { WishlistView } from './components/WishlistView';
-import { VendorStoreView } from './components/VendorStoreView';
-import { VendorPortalView } from './components/VendorPortalView';
+import { MyListingsView } from './components/MyListingsView';
+import { MyPurchasesView } from './components/MyPurchasesView';
+import { ProfileView } from './components/ProfileView';
 import { AdminHubView } from './components/AdminHubView';
-import { ConcurrencyLabView } from './components/ConcurrencyLabView';
-import { CartDrawer } from './components/CartDrawer';
 import { ProductDetailModal } from './components/ProductDetailModal';
-import { ApiDocsModal } from './components/ApiDocsModal';
-import { OrdersHistoryView } from './components/OrdersHistoryView';
+import { CreateProductModal } from './components/CreateProductModal';
 import { AiAssistantDrawer } from './components/AiAssistantDrawer';
-import { Sparkles, Bot } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const LoadingScreen = () => (
   <div className="min-h-screen bg-[#5B85FA] dark:bg-[#090A10] brutal-grid-bg flex items-center justify-center p-4">
@@ -24,39 +19,20 @@ const LoadingScreen = () => (
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FEF08A] dark:bg-[#FFE600] border-3 border-black shadow-brutal">
         <Sparkles className="w-7 h-7 text-black animate-spin" />
       </div>
-      <h2 className="text-lg font-display font-black text-black dark:text-white">Loading MarketPulse...</h2>
-      <p className="text-xs font-mono font-bold text-black/70 dark:text-white/70">Neo-Brutalist Engine</p>
+      <h2 className="text-lg font-display font-black text-black dark:text-white">Loading CampusExchange...</h2>
+      <p className="text-xs font-mono font-bold text-black/70 dark:text-white/70">College Peer-to-Peer Marketplace</p>
     </div>
   </div>
 );
 
 const MainApp = () => {
   const { user, loading } = useAuth();
-  const [currentTab, setCurrentTab] = useState(() => {
-    const savedUser = localStorage.getItem('mp_user');
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.role === 'vendor') return 'vendor';
-        if (parsed.role === 'admin') return 'admin';
-      } catch (e) {}
-    }
-    return 'store';
-  });
+  // Default to 'marketplace'
+  const [currentTab, setCurrentTab] = useState('marketplace');
 
-  const [selectedStoreSlug, setSelectedStoreSlug] = useState(null);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isApiDocsOpen, setIsApiDocsOpen] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isCreateListingOpen, setIsCreateListingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-  React.useEffect(() => {
-    if (user?.role === 'vendor' && currentTab !== 'vendor' && currentTab !== 'store-detail' && currentTab !== 'store') {
-      setCurrentTab('vendor');
-    } else if (user?.role === 'admin' && currentTab !== 'admin' && currentTab !== 'vendor' && currentTab !== 'concurrency' && currentTab !== 'store' && currentTab !== 'store-detail') {
-      setCurrentTab('admin');
-    }
-  }, [user]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -66,47 +42,42 @@ const MainApp = () => {
     return <AuthPage />;
   }
 
-  const handleOpenStore = (slug) => {
-    setSelectedStoreSlug(slug);
-    setCurrentTab('store-detail');
-  };
-
   return (
     <div className="min-h-screen bg-[#5B85FA] dark:bg-[#090A10] brutal-grid-bg text-black dark:text-white selection:bg-[#FEF08A] selection:text-black flex flex-col justify-between transition-colors duration-200 relative">
       {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenApiDocs={() => setIsApiDocsOpen(true)}
+        onOpenCreateListing={() => setIsCreateListingOpen(true)}
         onOpenAi={() => setIsAiOpen(true)}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-12">
-        {currentTab === 'store' && (
+        {(currentTab === 'marketplace' || currentTab === 'store') && (
           <StorefrontView
             onSelectProduct={(product) => setSelectedProduct(product)}
-            onOpenStore={handleOpenStore}
+            onOpenCreateListing={() => setIsCreateListingOpen(true)}
           />
         )}
-        {currentTab === 'wishlist' && (
-          <WishlistView
-            onGoToStore={() => setCurrentTab('store')}
+        {currentTab === 'my-listings' && (
+          <MyListingsView
             onSelectProduct={(product) => setSelectedProduct(product)}
+            onOpenCreateListing={() => setIsCreateListingOpen(true)}
           />
         )}
-        {currentTab === 'store-detail' && (
-          <VendorStoreView
-            storeSlug={selectedStoreSlug}
-            onBack={() => setCurrentTab('store')}
-            onSelectProduct={(product) => setSelectedProduct(product)}
+        {(currentTab === 'my-purchases' || currentTab === 'orders') && (
+          <MyPurchasesView
+            onGoToMarketplace={() => setCurrentTab('marketplace')}
           />
         )}
-        {currentTab === 'orders' && <OrdersHistoryView onGoToStore={() => setCurrentTab('store')} />}
-        {currentTab === 'vendor' && <VendorPortalView />}
+        {currentTab === 'profile' && (
+          <ProfileView
+            onNavigateToMarketplace={() => setCurrentTab('marketplace')}
+            onNavigateToListings={() => setCurrentTab('my-listings')}
+          />
+        )}
         {currentTab === 'admin' && <AdminHubView />}
-        {currentTab === 'concurrency' && <ConcurrencyLabView />}
       </main>
 
       {/* Persistent Floating AI Assistant Launcher FAB */}
@@ -120,53 +91,57 @@ const MainApp = () => {
             <span className="relative inline-flex rounded-full h-3 w-3 bg-black"></span>
           </span>
           <Sparkles className="w-5 h-5 text-black group-hover:rotate-12 transition-transform" />
-          <span>Ask AI Pulse</span>
+          <span>Ask Campus AI</span>
         </button>
       </div>
-
-      {/* Cart Drawer */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        onOrderCompleted={(order) => {}}
-      />
 
       {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onOpenStore={handleOpenStore}
+        onReservationSuccess={() => {
+          setSelectedProduct(null);
+          setCurrentTab('my-purchases');
+        }}
       />
 
-      {/* API Specs Modal */}
-      <ApiDocsModal
-        isOpen={isApiDocsOpen}
-        onClose={() => setIsApiDocsOpen(false)}
+      {/* Create Campus Listing Modal */}
+      <CreateProductModal
+        isOpen={isCreateListingOpen}
+        onClose={() => setIsCreateListingOpen(false)}
+        onProductCreated={(newProduct) => {
+          setSelectedProduct(null);
+          setCurrentTab('my-listings');
+        }}
       />
 
       {/* AI Assistant Drawer (LangGraph Agent) */}
       <AiAssistantDrawer
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
-        onSelectProduct={(product) => setSelectedProduct(product)}
-        onOpenStore={handleOpenStore}
+        onSelectProduct={(product) => {
+          setIsAiOpen(false);
+          setSelectedProduct(product);
+        }}
       />
 
       {/* Footer */}
       <footer className="border-t-3 border-black bg-[#FEF08A] dark:bg-[#121522] py-6 px-4 sm:px-6 lg:px-8 text-xs text-black dark:text-white font-mono font-bold shadow-[0px_-4px_0px_0px_#000] transition-colors">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
-            <span className="font-display font-black text-sm uppercase bg-black text-white px-2 py-0.5 rounded-md border border-white/20">MarketPulse</span>
+            <span className="font-display font-black text-sm uppercase bg-black text-white px-2 py-0.5 rounded-md border border-white/20">
+              CampusExchange
+            </span>
             <span>★</span>
-            <span>Neo-Brutalist & Cyber-Dark Engine</span>
+            <span>Buy. Sell. Reuse. Within Your Campus.</span>
           </div>
 
           <div className="flex items-center space-x-4 text-xs font-black">
-            <span className="hover:underline cursor-pointer">Privacy</span>
+            <span>MNIT Jaipur</span>
             <span>•</span>
-            <span className="hover:underline cursor-pointer">Terms</span>
+            <span>Direct Campus Pickups</span>
             <span>•</span>
-            <span className="hover:underline cursor-pointer">Vendors</span>
+            <span>0% Platform Commission</span>
           </div>
         </div>
       </footer>
@@ -178,11 +153,7 @@ export function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <MainApp />
-          </WishlistProvider>
-        </CartProvider>
+        <MainApp />
       </AuthProvider>
     </ThemeProvider>
   );

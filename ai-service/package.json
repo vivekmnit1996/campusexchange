@@ -1,7 +1,7 @@
 {
-  "name": "marketpulse-ai-service",
+  "name": "campusexchange-ai-service",
   "version": "1.0.0",
-  "description": "LangGraph-powered AI Agent Microservice for MarketPulse E-Commerce Marketplace",
+  "description": "LangGraph-powered AI Agent Microservice for CampusExchange Marketplace",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

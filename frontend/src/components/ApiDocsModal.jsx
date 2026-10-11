@@ -9,29 +9,33 @@ export const ApiDocsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const endpoints = [
-    { method: 'POST', path: '/api/v1/auth/register', desc: 'Register customer or vendor account' },
-    { method: 'POST', path: '/api/v1/auth/login', desc: 'Authenticate with email and password to receive JWT' },
-    { method: 'GET', path: '/api/v1/auth/me', desc: 'Retrieve authenticated profile and store data' },
-    { method: 'GET', path: '/api/v1/products', desc: 'Multi-faceted catalog search with full-text indexing & filters' },
-    { method: 'POST', path: '/api/v1/products', desc: 'Create new product listing (Vendor role)' },
-    { method: 'POST', path: '/api/v1/products/:id/reviews', desc: 'Submit verified customer star review & rating' },
-    { method: 'POST', path: '/api/v1/orders', desc: 'Unified multi-vendor checkout with atomic stock reservation' },
-    { method: 'GET', path: '/api/v1/orders/mine', desc: 'Fetch customer order history and partitioned fulfillments' },
-    { method: 'PATCH', path: '/api/v1/orders/:id/cancel', desc: 'Cancel order, restore stock, and reverse ledger' },
-    { method: 'GET', path: '/api/v1/vendor/dashboard', desc: 'Vendor earnings, sub-orders pipeline, and catalog stats' },
-    { method: 'GET', path: '/api/v1/stores/:slug', desc: 'Retrieve vendor storefront bio & exclusive catalog' },
-    { method: 'GET', path: '/api/v1/analytics/platform', desc: 'MongoDB aggregation pipeline for GMV & leaderboard' },
-    { method: 'POST', path: '/api/v1/webhooks/payment', desc: 'HMAC-SHA256 signature verified payment event ingress' },
+    { method: 'POST', path: '/api/auth/register', desc: 'Register student account (BUYER or SELLER)' },
+    { method: 'POST', path: '/api/auth/login', desc: 'Authenticate student credentials and receive JWT' },
+    { method: 'POST', path: '/api/auth/demo-login', desc: '1-click demo login for Buyer, Seller, or Admin' },
+    { method: 'GET', path: '/api/auth/me', desc: 'Fetch currently authenticated student profile' },
+    { method: 'GET', path: '/api/products', desc: 'Browse & search campus listings with keyword, category, price filters' },
+    { method: 'POST', path: '/api/products', desc: 'Create new campus listing with condition and pickup spot (Seller/Admin)' },
+    { method: 'PATCH', path: '/api/products/:id', desc: 'Update listing details or price (Owner/Admin)' },
+    { method: 'DELETE', path: '/api/products/:id', desc: 'Delete campus listing (Owner/Admin)' },
+    { method: 'POST', path: '/api/requests', desc: 'Create purchase request with duplicate and SOLD protection' },
+    { method: 'GET', path: '/api/requests/buyer', desc: 'Get buyer purchase requests & pickup coordination details' },
+    { method: 'GET', path: '/api/requests/seller', desc: 'Get seller incoming reservation requests' },
+    { method: 'PATCH', path: '/api/requests/:id/accept', desc: 'Seller accepts request; atomically updates product to RESERVED' },
+    { method: 'PATCH', path: '/api/requests/:id/reject', desc: 'Seller declines request; reverts listing to AVAILABLE' },
+    { method: 'PATCH', path: '/api/requests/:id/complete', desc: 'Seller completes physical hand-off; marks product SOLD' },
+    { method: 'GET', path: '/api/admin/stats', desc: 'Campus marketplace statistics and volume metrics' },
+    { method: 'GET', path: '/api/admin/users', desc: 'List and moderate registered campus student accounts' },
+    { method: 'POST', path: '/api/ai/search', desc: 'Natural-language product discovery (Groq LLM + Catalog Search)' },
   ];
 
   const handleDownloadPostman = () => {
-    fetch('/marketpulse_postman_collection.json')
+    fetch('/campusexchange_postman_collection.json')
       .then((res) => res.blob())
       .then((blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'marketpulse_postman_collection.json';
+        a.download = 'campusexchange_postman_collection.json';
         document.body.appendChild(a);
         a.click();
         a.remove();

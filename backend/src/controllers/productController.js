@@ -1,39 +1,39 @@
 import { Product } from '../models/Product.js';
-import { Store } from '../models/Store.js';
 
 export const getProducts = async (req, res, next) => {
   try {
     const {
       search,
       category,
+      condition,
+      status,
       minPrice,
       maxPrice,
-      storeId,
-      inStock,
-      sortBy = 'createdAt',
-      order = 'desc',
+      sellerId,
       page = 1,
-      limit = 12,
+      limit = 20,
+      sortBy = 'newest',
     } = req.query;
 
-    const query = { isActive: true };
+    const query = {};
 
-    // 1. Text Search across Title, Description, Category, Tags
-    if (search && search.trim() !== '') {
-      query.$text = { $search: search.trim() };
+    // By default, browse only AVAILABLE products unless status is explicitly requested
+    if (status && status.toUpperCase() !== 'ALL') {
+      query.status = status.toUpperCase();
+    } else if (!status) {
+      query.status = 'AVAILABLE';
     }
 
-    // 2. Facet filters
     if (category && category !== 'All') {
       query.category = category;
     }
 
-    if (storeId) {
-      query.store = storeId;
+    if (condition) {
+      query.condition = condition;
     }
 
-    if (inStock === 'true') {
-      query.stock = { $gt: 0 };
+    if (sellerId) {
+      query.seller = sellerId;
     }
 
     if (minPrice || maxPrice) {
@@ -42,34 +42,39 @@ export const getProducts = async (req, res, next) => {
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // 3. Sorting options
-    let sortOptions = {};
-    if (search) {
-      sortOptions = { score: { $meta: 'textScore' } };
-    } else {
-      sortOptions[sortBy] = order === 'asc' ? 1 : -1;
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+      ];
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    let sortOption = { createdAt: -1 };
+    if (sortBy === 'price_asc') sortOption = { price: 1 };
+    if (sortBy === 'price_desc') sortOption = { price: -1 };
 
-    // Parallel execution for pagination count and data fetching
-    const [products, totalCount, categories] = await Promise.all([
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [products, total] = await Promise.all([
       Product.find(query)
-        .populate('store', 'name slug logo description rating')
-        .sort(sortOptions)
+        .populate('seller', 'name email college branch year hostel avatar')
+        .sort(sortOption)
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(limitNum)
+        .lean(),
       Product.countDocuments(query),
-      Product.distinct('category', { isActive: true }),
     ]);
 
     res.json({
       success: true,
       count: products.length,
-      total: totalCount,
-      totalPages: Math.ceil(totalCount / Number(limit)),
-      currentPage: Number(page),
-      categories,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
       products,
     });
   } catch (error) {
@@ -80,12 +85,12 @@ export const getProducts = async (req, res, next) => {
 export const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('store', 'name slug logo description rating')
-      .populate('reviews.user', 'name avatar');
+      .populate('seller', 'name email college branch year hostel avatar');
 
     if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(404).json({ success: false, message: 'Listing not found.' });
     }
+
     res.json({ success: true, product });
   } catch (error) {
     next(error);
@@ -94,30 +99,48 @@ export const getProductById = async (req, res, next) => {
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { title, description, price, compareAtPrice, stock, category, tags, images, attributes } = req.body;
+    const {
+      title,
+      description,
+      category,
+      price,
+      quantity,
+      condition,
+      image,
+      images,
+      imagePublicId,
+      pickupLocation,
+      reasonForSelling,
+    } = req.body;
 
-    const store = await Store.findOne({ owner: req.user._id });
-    if (!store) {
-      return res.status(403).json({ success: false, message: 'Only registered vendors with a store can create products.' });
-    }
-
-    const slug = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+    const chosenImage = image || (images && images[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+    const parsedQty = Math.max(1, parseInt(quantity, 10) || 1);
 
     const product = await Product.create({
+      seller: req.user._id,
       title,
-      slug,
       description,
-      price,
-      compareAtPrice,
-      stock,
       category,
-      tags: Array.isArray(tags) ? tags : (tags || '').split(',').map((t) => t.trim()),
-      images: images && images.length > 0 ? images : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'],
-      store: store._id,
-      attributes: attributes || {},
+      price: Number(price),
+      quantity: parsedQty,
+      stock: parsedQty,
+      condition: condition || 'Good',
+      image: chosenImage,
+      images: images && images.length > 0 ? images : [chosenImage],
+      imagePublicId: imagePublicId || '',
+      pickupLocation: pickupLocation || req.user.hostel || 'Campus Hostel Gate',
+      reasonForSelling: reasonForSelling || 'Graduating',
+      status: 'AVAILABLE',
     });
 
-    res.status(201).json({ success: true, product });
+    const populated = await Product.findById(product._id)
+      .populate('seller', 'name email college branch year hostel avatar');
+
+    res.status(201).json({
+      success: true,
+      message: 'Listing published successfully! It is now AVAILABLE to campus students.',
+      product: populated,
+    });
   } catch (error) {
     next(error);
   }
@@ -127,20 +150,41 @@ export const updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(404).json({ success: false, message: 'Listing not found.' });
     }
 
-    const store = await Store.findOne({ owner: req.user._id });
-    if (req.user.role !== 'admin' && (!store || product.store.toString() !== store._id.toString())) {
-      return res.status(403).json({ success: false, message: 'Unauthorized to modify this product.' });
+    const isOwner = product.seller.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only the seller who listed this item can modify it.',
+      });
     }
 
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const updatePayload = { ...req.body };
+    if (updatePayload.quantity !== undefined) {
+      updatePayload.quantity = Math.max(0, parseInt(updatePayload.quantity, 10) || 0);
+      updatePayload.stock = updatePayload.quantity;
+      if (updatePayload.quantity > 0 && product.status === 'RESERVED' && !updatePayload.status) {
+        updatePayload.status = 'AVAILABLE';
+      }
+    } else if (updatePayload.stock !== undefined) {
+      updatePayload.stock = Math.max(0, parseInt(updatePayload.stock, 10) || 0);
+      updatePayload.quantity = updatePayload.stock;
+    }
+
+    const updated = await Product.findByIdAndUpdate(req.params.id, updatePayload, {
       new: true,
       runValidators: true,
-    });
+    }).populate('seller', 'name email college branch year hostel avatar');
 
-    res.json({ success: true, product: updated });
+    res.json({
+      success: true,
+      message: 'Listing updated successfully.',
+      product: updated,
+    });
   } catch (error) {
     next(error);
   }
@@ -150,65 +194,50 @@ export const deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(404).json({ success: false, message: 'Listing not found.' });
     }
 
-    const store = await Store.findOne({ owner: req.user._id });
-    if (req.user.role !== 'admin' && (!store || product.store.toString() !== store._id.toString())) {
-      return res.status(403).json({ success: false, message: 'Unauthorized to delete this product.' });
+    const isOwner = product.seller.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only the seller who listed this item can delete it.',
+      });
+    }
+
+    if (product.imagePublicId && process.env.CLOUDINARY_API_KEY) {
+      try {
+        const { v2: cloudinary } = await import('cloudinary');
+        await cloudinary.uploader.destroy(product.imagePublicId);
+      } catch (cErr) {
+        console.error('Failed to destroy Cloudinary image:', cErr.message);
+      }
     }
 
     await Product.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Product deleted successfully.' });
+
+    res.json({
+      success: true,
+      message: 'Listing deleted successfully.',
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const createProductReview = async (req, res, next) => {
+export const getMyListings = async (req, res, next) => {
   try {
-    const { rating, comment } = req.body;
-    const product = await Product.findById(req.params.id);
+    const products = await Product.find({ seller: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate('seller', 'name email college branch year hostel phone avatar');
 
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
-    }
-
-    if (!rating || Number(rating) < 1 || Number(rating) > 5) {
-      return res.status(400).json({ success: false, message: 'Please provide a star rating between 1 and 5.' });
-    }
-
-    if (!comment || comment.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Please provide review comments.' });
-    }
-
-    const alreadyReviewed = product.reviews.find(
-      (r) => r.user.toString() === req.user._id.toString()
-    );
-
-    if (alreadyReviewed) {
-      alreadyReviewed.rating = Number(rating);
-      alreadyReviewed.comment = comment.trim();
-    } else {
-      const review = {
-        name: req.user.name,
-        rating: Number(rating),
-        comment: comment.trim(),
-        user: req.user._id,
-      };
-      product.reviews.push(review);
-    }
-
-    product.numReviews = product.reviews.length;
-    product.rating = Number(
-      (
-        product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-        product.reviews.length
-      ).toFixed(1)
-    );
-
-    await product.save();
-    res.status(201).json({ success: true, message: 'Review recorded successfully.', product });
+    res.json({
+      success: true,
+      count: products.length,
+      products,
+    });
   } catch (error) {
     next(error);
   }

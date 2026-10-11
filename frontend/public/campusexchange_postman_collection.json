@@ -1,0 +1,471 @@
+{
+  "info": {
+    "_postman_id": "campusexchange-api-collection-2026",
+    "name": "CampusExchange \u2014 College Marketplace API Suite",
+    "description": "Production REST API collection for CampusExchange: College-exclusive student-to-student marketplace. Features JWT authentication, role authorization (BUYER, SELLER, ADMIN), atomic product reservation, physical campus hand-off requests, and AI product discovery.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register Student (Buyer/Seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kavita Joshi\",\n  \"email\": \"kavita@mnit.ac.in\",\n  \"password\": \"Password123!\",\n  \"role\": \"BUYER\",\n  \"college\": \"MNIT Jaipur\",\n  \"branch\": \"Civil Engineering\",\n  \"year\": \"1st Year\",\n  \"hostel\": \"Gargi Hostel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@mnit.ac.in\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1-Click Demo Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"SELLER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/demo-login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "demo-login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "Browse / Search Listings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?search=calculator&category=Calculators&maxPrice=1000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "calculator"
+                },
+                {
+                  "key": "category",
+                  "value": "Calculators"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "1000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                ":id"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Listing (Seller Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Scientific Calculator Casio 991EX\",\n  \"description\": \"Gently used for engineering mathematics, solar backup.\",\n  \"category\": \"Calculators\",\n  \"price\": 650,\n  \"condition\": \"Like New\",\n  \"pickupLocation\": \"Hostel 5 Gate\",\n  \"reasonForSelling\": \"Graduating\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "My Published Listings (Seller Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/seller/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "seller",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Purchase Requests (Campus Hand-Off)",
+      "item": [
+        {
+          "name": "Send Purchase Request (Buyer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PRODUCT_OBJECT_ID_HERE\",\n  \"notes\": \"Hi, can we meet near Hostel 5 lawn tomorrow?\",\n  \"pickupLocation\": \"Hostel 5 Gate\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Buyer Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/requests/buyer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "buyer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Seller Incoming Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/requests/seller",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "seller"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accept Request (Atomic Reservation Lock)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/requests/:id/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                ":id",
+                "accept"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete Physical Hand-off (Marks SOLD)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/requests/:id/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                ":id",
+                "complete"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Console",
+      "item": [
+        {
+          "name": "Get Marketplace Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Registered Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List All Listings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "products"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. AI Discovery Service",
+      "item": [
+        {
+          "name": "Natural Language Product Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I need a used laptop or monitor under 6000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "search"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quick Student Prompts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/quick-prompts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "quick-prompts"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,65 +1,36 @@
 export const errorHandler = (err, req, res, next) => {
-  console.error('🔥 Server Error:', {
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-    url: req.originalUrl,
-    method: req.method,
-  });
+  let statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+  let message = err.message || 'Internal Server Error';
 
-  // Mongoose Validation Error
-  if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map((val) => val.message);
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors: messages,
-    });
+  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+    statusCode = 400;
+    message = 'Invalid ID format';
   }
 
-  // Mongoose Duplicate Key Error
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(409).json({
-      success: false,
-      message: `A record with this ${field} already exists.`,
-    });
+    statusCode = 409;
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    message = `A record with this ${field} already exists.`;
   }
 
-  // JWT Errors
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = Object.values(err.errors).map((val) => val.message).join(', ');
+  }
+
   if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid authorization token.',
-    });
-  }
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Authorization token has expired.',
-    });
+    statusCode = 401;
+    message = 'Invalid authentication token.';
   }
 
-  const statusCode = err.statusCode || (res.statusCode !== 200 ? res.statusCode : 500);
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Authentication token expired.';
+  }
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    message,
+    ...(process.env.NODE_ENV === 'development' && statusCode === 500 ? { stack: err.stack } : {}),
   });
-};
-
-export const validate = (schema) => (req, res, next) => {
-  try {
-    schema.parse({
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    });
-    next();
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: 'Input Validation Failed',
-      errors: error.errors?.map((e) => ({ field: e.path.join('.'), message: e.message })) || error.message,
-    });
-  }
 };

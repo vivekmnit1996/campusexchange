@@ -1,85 +1,59 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
-import { Store } from '../models/Store.js';
-import { Product } from '../models/Product.js';
 
-const generateTokens = (user) => {
-  const token = jwt.sign(
+const generateToken = (user) => {
+  return jwt.sign(
     { id: user._id, role: user.role },
-    process.env.JWT_SECRET || 'marketpulse_jwt_super_secret_key_2026',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+    process.env.JWT_SECRET || 'campusexchange_jwt_super_secret_key_2026',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
-
-  const refreshToken = jwt.sign(
-    { id: user._id },
-    process.env.JWT_REFRESH_SECRET || 'marketpulse_refresh_super_secret_key_2026',
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-  );
-
-  return { token, refreshToken };
 };
 
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role, storeName } = req.body;
+    const { name, email, password, role, college, branch, year, hostel, phone } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email is already registered.' });
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email address already exists.',
+      });
     }
+
+    const assignedRole = role && role.toUpperCase() === 'ADMIN'
+      ? 'ADMIN'
+      : 'STUDENT';
 
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'customer',
-      walletBalance: 0.0,
-      savedAddresses: [
-        {
-          name: name || 'Customer',
-          address: '452 Innovation Blvd, Suite 300',
-          city: 'San Francisco',
-          postalCode: '94107',
-          country: 'United States',
-          isDefault: true,
-        },
-      ],
+      role: assignedRole,
+      college: college || 'MNIT Jaipur',
+      branch: branch || 'Computer Science & Engineering',
+      year: year || '3rd Year',
+      hostel: hostel || 'Hostel 5',
+      phone: phone || '',
     });
 
-    let store = null;
-    if (role === 'vendor' && storeName) {
-      const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      store = await Store.create({
-        name: storeName,
-        slug,
-        owner: user._id,
-      });
-      user.store = store._id;
-      await user.save();
-    }
-
-    const { token, refreshToken } = generateTokens(user);
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
+      message: 'Account created successfully! Welcome to CampusExchange.',
       token,
-      refreshToken,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        college: user.college,
+        branch: user.branch,
+        year: user.year,
+        hostel: user.hostel,
+        phone: user.phone,
         avatar: user.avatar,
-        walletBalance: user.walletBalance,
-        savedAddresses: user.savedAddresses,
-        wishlist: user.wishlist || [],
-        store: store ? { id: store._id, name: store.name, slug: store.slug } : null,
       },
     });
   } catch (error) {
@@ -91,43 +65,104 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password.' });
-    }
-
-    const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail }).select('+password').populate('store');
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
     }
 
-    const { token, refreshToken } = generateTokens(user);
+    if (user.isSuspended) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended by the campus administrator.',
+      });
+    }
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    const token = generateToken(user);
 
     res.json({
       success: true,
+      message: 'Signed in successfully.',
       token,
-      refreshToken,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        college: user.college,
+        branch: user.branch,
+        year: user.year,
+        hostel: user.hostel,
+        phone: user.phone,
         avatar: user.avatar,
-        walletBalance: user.walletBalance,
-        savedAddresses: user.savedAddresses || [],
-        wishlist: user.wishlist || [],
-        store: user.store ? { id: user.store._id, name: user.store.name, slug: user.store.slug, balance: user.store.balance } : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const demoLogin = async (req, res, next) => {
+  try {
+    const { role, email } = req.body;
+    let user = null;
+
+    if (email) {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    }
+
+    if (!user && role) {
+      const normalizedRole = role.toUpperCase();
+      if (normalizedRole === 'ADMIN') {
+        user = await User.findOne({ role: 'ADMIN' });
+      } else {
+        // Find existing student demo user
+        user = (await User.findOne({ email: 'rahul@mnit.ac.in' })) ||
+               (await User.findOne({ role: { $ne: 'ADMIN' } }));
+      }
+    }
+
+    if (!user) {
+      // Default fallback: student demo account
+      user = (await User.findOne({ email: 'rahul@mnit.ac.in' })) ||
+             (await User.findOne({ role: { $ne: 'ADMIN' } })) ||
+             (await User.findOne());
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No demo student found. Please seed the database first.',
+      });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: `Demo sign-in as ${user.name} (${user.role}) successful.`,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        college: user.college,
+        branch: user.branch,
+        year: user.year,
+        hostel: user.hostel,
+        phone: user.phone,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -137,7 +172,11 @@ export const login = async (req, res, next) => {
 
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).populate('store');
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
     res.json({
       success: true,
       user: {
@@ -145,11 +184,12 @@ export const getMe = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        college: user.college,
+        branch: user.branch,
+        year: user.year,
+        hostel: user.hostel,
+        phone: user.phone,
         avatar: user.avatar,
-        walletBalance: user.walletBalance,
-        savedAddresses: user.savedAddresses || [],
-        wishlist: user.wishlist || [],
-        store: user.store ? { id: user.store._id, name: user.store.name, slug: user.store.slug, balance: user.store.balance } : null,
       },
     });
   } catch (error) {
@@ -157,71 +197,43 @@ export const getMe = async (req, res, next) => {
   }
 };
 
-export const toggleWishlist = async (req, res, next) => {
+export const updateProfile = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    const user = await User.findById(req.user.id);
+    const { name, college, branch, year, hostel, phone, avatar, role } = req.body;
+    const user = await User.findById(req.user._id);
 
-    const index = user.wishlist.indexOf(productId);
-    let inWishlist = false;
-
-    if (index > -1) {
-      user.wishlist.splice(index, 1);
-      inWishlist = false;
-    } else {
-      user.wishlist.push(productId);
-      inWishlist = true;
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    await user.save();
-    res.json({ success: true, inWishlist, wishlist: user.wishlist });
-  } catch (error) {
-    next(error);
-  }
-};
+    if (name) user.name = name;
+    if (college) user.college = college;
+    if (branch) user.branch = branch;
+    if (year) user.year = year;
+    if (hostel) user.hostel = hostel;
+    if (phone !== undefined) user.phone = phone;
+    if (avatar) user.avatar = avatar;
 
-export const getWishlist = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id).populate({
-      path: 'wishlist',
-      populate: { path: 'store', select: 'name slug' },
+    await user.save();
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully.',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        college: user.college,
+        branch: user.branch,
+        year: user.year,
+        hostel: user.hostel,
+        phone: user.phone,
+        avatar: user.avatar,
+      },
     });
-    res.json({ success: true, wishlist: user.wishlist || [] });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const addSavedAddress = async (req, res, next) => {
-  try {
-    const { name, address, city, postalCode, country } = req.body;
-    const user = await User.findById(req.user.id);
-
-    user.savedAddresses.push({
-      name,
-      address,
-      city,
-      postalCode,
-      country: country || 'United States',
-      isDefault: user.savedAddresses.length === 0,
-    });
-
-    await user.save();
-    res.status(201).json({ success: true, savedAddresses: user.savedAddresses });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const deleteSavedAddress = async (req, res, next) => {
-  try {
-    const { addressId } = req.params;
-    const user = await User.findById(req.user.id);
-
-    user.savedAddresses = user.savedAddresses.filter((a) => a._id.toString() !== addressId);
-    await user.save();
-
-    res.json({ success: true, savedAddresses: user.savedAddresses });
   } catch (error) {
     next(error);
   }

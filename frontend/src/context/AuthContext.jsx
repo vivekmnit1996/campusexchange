@@ -8,18 +8,20 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('mp_token');
+    const token = localStorage.getItem('campus_token') || localStorage.getItem('mp_token');
     if (token) {
       api.getMe()
         .then((res) => {
           if (res.success) {
             setUser(res.user);
           } else {
+            localStorage.removeItem('campus_token');
             localStorage.removeItem('mp_token');
             setUser(null);
           }
         })
         .catch(() => {
+          localStorage.removeItem('campus_token');
           localStorage.removeItem('mp_token');
           setUser(null);
         })
@@ -33,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.login(email, password);
       if (res.success) {
-        localStorage.setItem('mp_token', res.token);
+        localStorage.setItem('campus_token', res.token);
         setUser(res.user);
         return { success: true };
       }
@@ -43,11 +45,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role, storeName) => {
+  const demoLogin = async (role = 'STUDENT', email = null) => {
     try {
-      const res = await api.register(name, email, password, role, storeName);
+      const res = await api.demoLogin(role, email);
       if (res.success) {
-        localStorage.setItem('mp_token', res.token);
+        localStorage.setItem('campus_token', res.token);
+        setUser(res.user);
+        return { success: true };
+      }
+      return { success: false, message: res.message };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  };
+
+  const register = async (nameOrPayload, email, password, role) => {
+    try {
+      const payload = typeof nameOrPayload === 'object'
+        ? nameOrPayload
+        : { name: nameOrPayload, email, password, role };
+      const res = await api.register(payload);
+      if (res.success) {
+        localStorage.setItem('campus_token', res.token);
         setUser(res.user);
         return { success: true };
       }
@@ -58,6 +77,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    localStorage.removeItem('campus_token');
     localStorage.removeItem('mp_token');
     localStorage.removeItem('mp_cart');
     setUser(null);
@@ -76,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, demoLogin, register, logout, refreshUser, setUser }}>
       {children}
     </AuthContext.Provider>
   );

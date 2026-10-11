@@ -2,16 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Send, X, Bot, ShieldCheck, ShieldAlert, ShoppingBag, ArrowRight, Trash2, HelpCircle, Star, Check } from 'lucide-react';
 import { aiApi } from '../services/aiApi';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
 
 export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStore }) {
   const { user } = useAuth();
-  const { addToCart } = useCart();
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       type: 'ai',
-      text: `👋 Hey **${user?.name || 'there'}**! I am **MarketPulse AI**, your dedicated shopping & platform assistant.\n\nI can help you search products, compare specs, check vendor stores, trace orders, and explain our escrow checkout policies.`,
+      text: `👋 Hey **${user?.name || 'there'}**! I am **CampusExchange AI**, your dedicated campus second-hand assistant.\n\nI can help you search pre-loved textbooks, bicycles, calculators, and hostel essentials from students at **MNIT Jaipur**, locate pickup spots, and find items from students across campus.`,
       isOnTopic: true,
       products: [],
       timestamp: new Date(),
@@ -57,6 +55,8 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
         name: user?.name,
         email: user?.email,
         role: user?.role,
+        college: user?.college,
+        hostel: user?.hostel,
       };
 
       const result = await aiApi.sendMessage(text, threadId, userContext);
@@ -77,7 +77,7 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
         {
           id: `ai-err-${Date.now()}`,
           type: 'ai',
-          text: "⚠️ Sorry, there was an error processing your query. Please make sure the AI microservice is active.",
+          text: "⚠️ Sorry, there was an error processing your query. Please make sure the AI microservice or backend agent is active.",
           isOnTopic: true,
           products: [],
           timestamp: new Date(),
@@ -88,28 +88,12 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
     }
   };
 
-  const handleQuickAdd = (product) => {
-    const normalizedProduct = {
-      _id: product.id || product._id,
-      title: product.title,
-      price: product.price,
-      images: [product.image || ''],
-      store: { _id: product.storeId, name: product.storeName },
-      stock: product.stock ?? 10,
-    };
-    addToCart(normalizedProduct, 1);
-    setAddedItemIds(prev => ({ ...prev, [product.id || product._id]: true }));
-    setTimeout(() => {
-      setAddedItemIds(prev => ({ ...prev, [product.id || product._id]: false }));
-    }, 2000);
-  };
-
   const handleClearHistory = () => {
     setMessages([
       {
         id: `welcome-${Date.now()}`,
         type: 'ai',
-        text: `Conversation cleared. How can I help you explore MarketPulse today?`,
+        text: `Conversation cleared. How can I help you find campus items today?`,
         isOnTopic: true,
         products: [],
         timestamp: new Date(),
@@ -131,14 +115,14 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="font-display font-black text-lg uppercase tracking-wider">MarketPulse AI</h2>
+                <h2 className="font-display font-black text-lg uppercase tracking-wider">CampusExchange AI</h2>
                 <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full font-mono font-bold uppercase tracking-wider">
                   LangGraph Agent
                 </span>
               </div>
               <p className="text-xs font-mono font-bold text-black/80 flex items-center space-x-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block animate-ping"></span>
-                <span>Groq Llama 3.3 • Domain Sandboxed</span>
+                <span>MNIT Jaipur • Campus Sandboxed</span>
               </p>
             </div>
           </div>
@@ -147,13 +131,13 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
             <button
               onClick={handleClearHistory}
               title="Clear chat"
-              className="p-1.5 bg-white/80 hover:bg-white text-black rounded-lg border-2 border-black font-bold transition hover:shadow-brutal-sm"
+              className="p-1.5 bg-white/80 hover:bg-white text-black rounded-lg border-2 border-black font-bold transition hover:shadow-brutal-sm cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 bg-black hover:bg-black/80 text-white rounded-lg border-2 border-black font-bold transition hover:shadow-brutal-sm"
+              className="p-1.5 bg-black hover:bg-black/80 text-white rounded-lg border-2 border-black font-bold transition hover:shadow-brutal-sm cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -164,7 +148,7 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
         <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b-2 border-black text-[11px] font-mono font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
           <span className="flex items-center space-x-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Strict Marketplace Guardrails: Products, Orders, Stores & Escrow only</span>
+            <span>Strict Campus Guardrails: Second-hand items, sellers, hostels & pickup spots only</span>
           </span>
         </div>
 
@@ -215,7 +199,7 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
                     <div className="space-y-2 pt-1">
                       <div className="text-xs font-mono font-black uppercase tracking-wider text-black dark:text-[#FFE600] flex items-center space-x-1">
                         <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Recommended from Catalog ({msg.products.length})</span>
+                        <span>Campus Listings Found ({msg.products.length})</span>
                       </div>
 
                       <div className="grid grid-cols-1 gap-2.5">
@@ -237,36 +221,25 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
                                   {prod.title}
                                 </h4>
                                 <div className="flex items-center space-x-2 text-[11px] mt-0.5">
-                                  <span className="font-black text-black dark:text-[#FFE600]">${prod.price}</span>
-                                  {prod.rating && (
-                                    <span className="font-mono text-amber-500 font-bold flex items-center">
-                                      <Star className="w-3 h-3 fill-amber-400 stroke-amber-500 inline mr-0.5" />
-                                      {prod.rating}
+                                  <span className="font-black text-black dark:text-[#FFE600]">₹{prod.price?.toLocaleString()}</span>
+                                  {prod.condition && (
+                                    <span className="text-[10px] font-mono font-bold px-1 rounded bg-[#6EE7B7] text-black border border-black">
+                                      {prod.condition}
                                     </span>
                                   )}
                                   <span className="text-[10px] text-gray-500 truncate">{prod.category}</span>
                                 </div>
-                                <span className="text-[10px] font-mono text-gray-400 block truncate">
-                                  by {prod.storeName}
+                                <span className="text-[10px] font-mono text-gray-500 block truncate">
+                                  by {prod.sellerName || prod.storeName || 'Student Seller'} • {prod.pickupLocation || 'Hostel Gate'}
                                 </span>
                               </div>
 
-                              <div className="flex flex-col gap-1 shrink-0">
+                              <div className="shrink-0">
                                 <button
                                   onClick={() => onSelectProduct && onSelectProduct(prod)}
-                                  className="px-2.5 py-1 text-[11px] font-mono font-bold bg-[#FEF08A] hover:bg-[#FFE600] text-black rounded border-2 border-black transition hover:shadow-brutal-sm cursor-pointer"
+                                  className="px-3 py-1.5 text-xs font-mono font-bold bg-[#FEF08A] hover:bg-[#FFE600] text-black rounded-lg border-2 border-black transition hover:shadow-brutal-sm cursor-pointer"
                                 >
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleQuickAdd(prod)}
-                                  className={`px-2.5 py-1 text-[11px] font-mono font-bold rounded border-2 border-black transition flex items-center justify-center cursor-pointer ${
-                                    isAdded
-                                      ? 'bg-emerald-400 text-black'
-                                      : 'bg-black text-white hover:bg-black/80'
-                                  }`}
-                                >
-                                  {isAdded ? <Check className="w-3.5 h-3.5" /> : '+ Cart'}
+                                  View & Reserve
                                 </button>
                               </div>
                             </div>
@@ -319,7 +292,7 @@ export function AiAssistantDrawer({ isOpen, onClose, onSelectProduct, onOpenStor
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask about products, orders, vendor stores, checkout..."
+              placeholder="Ask about campus listings, student sellers, hostel pickups..."
               disabled={loading}
               className="flex-1 px-4 py-3 bg-gray-100 dark:bg-[#161B26] text-black dark:text-white rounded-xl border-3 border-black font-mono text-sm placeholder:text-gray-500 focus:outline-hidden focus:bg-[#FEF08A]/20 dark:focus:bg-[#FFE600]/10 transition disabled:opacity-50"
             />

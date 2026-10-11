@@ -1,73 +1,102 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || '/api/v1';
-const API_BASE = rawApiUrl.endsWith('/api/v1')
-  ? rawApiUrl
-  : (rawApiUrl.startsWith('http') ? `${rawApiUrl.replace(/\/$/, '')}/api/v1` : rawApiUrl);
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = rawApiUrl.startsWith('http')
+  ? (rawApiUrl.includes('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`)
+  : '/api';
 
-const fetchWithTimeout = async (url, options = {}, timeoutMs = 20000) => {
+const getHeaders = () => {
+  const token = localStorage.getItem('campus_token') || localStorage.getItem('mp_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+const fetchWithTimeout = async (url, options = {}, timeout = 10000) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
+  const id = setTimeout(() => controller.abort(), timeout);
   try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return res;
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
   } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Connection timed out. The backend server might be waking up, please try again in a few seconds.');
-    }
+    clearTimeout(id);
     throw error;
   }
 };
 
-const getHeaders = (idempotencyKey = null) => {
-  const token = localStorage.getItem('mp_token');
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  if (idempotencyKey) {
-    headers['Idempotency-Key'] = idempotencyKey;
-  }
-  return headers;
-};
-
 export const api = {
-  // Auth
+  // --- AUTHENTICATION ---
   async login(email, password) {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        body: JSON.stringify({ email, password }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        return { success: false, message: data.message || 'Invalid email or password' };
-      }
-      return data;
+      return await res.json();
     } catch (err) {
       return { success: false, message: err.message || 'Network error connecting to backend' };
     }
   },
 
-  async register(name, email, password, role, storeName) {
+  async demoLogin(role = 'STUDENT', email = null) {
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/demo-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, email }),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message || 'Network error connecting to backend' };
+    }
+  },
+
+  async uploadImage(file) {
+    try {
+      if (!file) {
+        return { success: false, message: 'No image file selected.' };
+      }
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        return {
+          success: false,
+          message: 'Unsupported format. Please upload a JPEG, PNG, or WebP image.',
+        };
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return {
+          success: false,
+          message: 'Image size exceeds the 5MB limit. Please choose a smaller file.',
+        };
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const token = localStorage.getItem('campus_token') || localStorage.getItem('mp_token');
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message || 'Image upload failed' };
+    }
+  },
+
+  async register(registrationData) {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email: email.trim().toLowerCase(), password, role, storeName }),
+        body: JSON.stringify(registrationData),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        return { success: false, message: data.message || 'Registration failed' };
-      }
-      return data;
+      return await res.json();
     } catch (err) {
       return { success: false, message: err.message || 'Network error connecting to backend' };
     }
@@ -78,202 +107,262 @@ export const api = {
       const res = await fetchWithTimeout(`${API_BASE}/auth/me`, {
         headers: getHeaders(),
       }, 8000);
-      return res.json();
+      return await res.json();
     } catch (err) {
       return { success: false, message: err.message };
     }
   },
 
-  // Wishlist
-  async toggleWishlist(productId) {
-    const res = await fetch(`${API_BASE}/auth/wishlist/${productId}`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    return res.json();
+  async updateProfile(data) {
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/profile`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.token) {
+        localStorage.setItem('campus_token', json.token);
+      }
+      return json;
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
-  async getWishlist() {
-    const res = await fetch(`${API_BASE}/auth/wishlist`, {
-      headers: getHeaders(),
-    });
-    return res.json();
-  },
-
-  // Address Book
-  async addSavedAddress(addressData) {
-    const res = await fetch(`${API_BASE}/auth/addresses`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(addressData),
-    });
-    return res.json();
-  },
-
-  async deleteSavedAddress(addressId) {
-    const res = await fetch(`${API_BASE}/auth/addresses/${addressId}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    return res.json();
-  },
-
-  // Products
+  // --- PRODUCTS ---
   async getProducts(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}/products?${query}`);
-    return res.json();
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_BASE}/products?${query}`);
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, products: [] };
+    }
   },
 
   async getProductById(id) {
-    const res = await fetch(`${API_BASE}/products/${id}`);
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/products/${id}`);
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
   async createProduct(data) {
-    const res = await fetch(`${API_BASE}/products`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
   async updateProduct(id, data) {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/products/${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
-  async createProductReview(productId, reviewData) {
-    const res = await fetch(`${API_BASE}/products/${productId}/reviews`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(reviewData),
-    });
-    return res.json();
+  async deleteProduct(id) {
+    try {
+      const res = await fetch(`${API_BASE}/products/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
-  // Stores
-  async getStore(identifier) {
-    const res = await fetch(`${API_BASE}/stores/${identifier}`);
-    return res.json();
+  async getMyListings() {
+    try {
+      const res = await fetch(`${API_BASE}/products/seller/me`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, products: [] };
+    }
   },
 
-  async getAllStores() {
-    const res = await fetch(`${API_BASE}/stores`);
-    return res.json();
+  // --- PURCHASE REQUESTS (CAMPUS HAND-OFF) ---
+  async reserveItem(productId, pickupLocation = '', notes = '', quantity = 1) {
+    try {
+      const res = await fetch(`${API_BASE}/requests`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          productId,
+          pickupLocation,
+          notes,
+          quantity: Math.max(1, parseInt(quantity, 10) || 1),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return {
+        status: res.status,
+        success: res.ok,
+        ...data,
+      };
+    } catch (err) {
+      return { success: false, message: err.message || 'Network error' };
+    }
   },
 
-  // Orders & Checkout
-  async createOrder(orderData, idempotencyKey = null) {
-    const res = await fetch(`${API_BASE}/orders`, {
-      method: 'POST',
-      headers: getHeaders(idempotencyKey),
-      body: JSON.stringify(orderData),
-    });
-    const data = await res.json();
-    return {
-      status: res.status,
-      cacheLookup: res.headers.get('X-Cache-Lookup') || 'NONE',
-      data,
-    };
+  async getMyPurchases() {
+    try {
+      const res = await fetch(`${API_BASE}/requests/buyer`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, requests: [] };
+    }
   },
 
+  async getSellerRequests() {
+    try {
+      const res = await fetch(`${API_BASE}/requests/seller`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, requests: [] };
+    }
+  },
+
+  async acceptReservation(requestId) {
+    try {
+      const res = await fetch(`${API_BASE}/requests/${requestId}/accept`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  async rejectReservation(requestId, reason = '') {
+    try {
+      const res = await fetch(`${API_BASE}/requests/${requestId}/reject`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ reason }),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  async completeReservation(requestId) {
+    try {
+      const res = await fetch(`${API_BASE}/requests/${requestId}/complete`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  async cancelReservation(requestId, reason = '') {
+    try {
+      const res = await fetch(`${API_BASE}/requests/${requestId}/cancel`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ reason }),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  // Backward compatibility aliases
   async getMyOrders() {
-    const res = await fetch(`${API_BASE}/orders/mine`, {
-      headers: getHeaders(),
-    });
-    return res.json();
+    return this.getMyPurchases();
   },
 
-  async cancelOrder(orderId, reason = 'Customer requested cancellation') {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/cancel`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify({ reason }),
-    });
-    return res.json();
+  async cancelOrder(orderId, reason = '') {
+    return this.cancelReservation(orderId, reason);
   },
 
-  // Vendor
-  async getVendorDashboard() {
-    const res = await fetch(`${API_BASE}/vendor/dashboard`, {
-      headers: getHeaders(),
-    });
-    return res.json();
+  // --- ADMIN CONSOLE ---
+  async getAdminUsers(page = 1, limit = 20) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users?page=${page}&limit=${limit}`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, users: [] };
+    }
   },
 
-  async getVendorSubOrders() {
-    const res = await fetch(`${API_BASE}/vendor/sub-orders`, {
-      headers: getHeaders(),
-    });
-    return res.json();
+  async deleteAdminUser(userId) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
   },
 
-  async updateSubOrderStatus(orderId, subOrderId, data) {
-    const res = await fetch(`${API_BASE}/vendor/orders/${orderId}/sub-orders/${subOrderId}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return res.json();
+  async getAdminProducts(page = 1, limit = 20) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/products?page=${page}&limit=${limit}`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message, products: [] };
+    }
   },
 
-  // Analytics
+  async deleteAdminProduct(productId) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  async getAdminStats() {
+    try {
+      const res = await fetch(`${API_BASE}/admin/stats`, {
+        headers: getHeaders(),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  },
+
   async getPlatformAnalytics() {
-    const res = await fetch(`${API_BASE}/analytics/platform`, {
-      headers: getHeaders(),
-    });
-    return res.json();
-  },
-
-  async getVendorAnalytics() {
-    const res = await fetch(`${API_BASE}/analytics/vendor`, {
-      headers: getHeaders(),
-    });
-    return res.json();
-  },
-
-  // Webhooks
-  async sendWebhook(payload, signature) {
-    const res = await fetch(`${API_BASE}/webhooks/payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-MarketPulse-Signature': signature,
-      },
-      body: JSON.stringify(payload),
-    });
-    return res.json();
-  },
-
-  async getWebhookLogs() {
-    const res = await fetch(`${API_BASE}/webhooks/logs`, {
-      headers: getHeaders(),
-    });
-    return res.json();
-  },
-
-  // DevTools
-  async simulateConcurrency(initialStock = 3, concurrentRequests = 20) {
-    const res = await fetch(`${API_BASE}/devtools/simulate-concurrency`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initialStock, concurrentRequests }),
-    });
-    return res.json();
-  },
-
-  async generateSignedWebhook(orderNumber, amount, tamperSignature = false) {
-    const res = await fetch(`${API_BASE}/devtools/emit-webhook`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderNumber, amount, tamperSignature }),
-    });
-    return res.json();
+    return this.getAdminStats();
   },
 };

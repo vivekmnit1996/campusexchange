@@ -1,265 +1,472 @@
-# MarketPulse — Multi-Vendor E-Commerce & Creator Marketplace
+# Campus Exchange — College Second-Hand Marketplace
 
-> **A modern, high-performance Multi-Vendor Marketplace platform built with the MERN Stack, featuring Neo-Brutalism & Cyber-Brutalism UI design, atomic inventory concurrency locking, multi-vendor order partitioning, visual carrier tracking, instant payment methods, and an intelligent LangGraph AI Agent Assistant powered by Groq with strict marketplace domain guardrails.**
-
-[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express.js-v4-000000.svg?logo=express&logoColor=white)](https://expressjs.com)
-[![LangGraph](https://img.shields.io/badge/LangGraph-StateGraph%20Engine-FF6F00.svg)](https://langchain-ai.github.io/langgraphjs/)
-[![Groq](https://img.shields.io/badge/Groq-Llama%203.3%20%2F%20OSS--120B-F55036.svg)](https://groq.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%20Ready-47A248.svg?logo=mongodb&logoColor=white)](https://www.mongodb.com)
-[![React](https://img.shields.io/badge/React-v18-61DAFB.svg?logo=react&logoColor=black)](https://reactjs.org)
-[![Vite](https://img.shields.io/badge/Vite-v5-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+> A clean, reliable, production-quality, college-exclusive second-hand marketplace where students can buy and sell items within their campus. Built with React, Node.js/Express, MongoDB, and a dedicated AI discovery service powered by Groq Llama 3.3.
 
 ---
 
-## 📖 Table of Contents
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [LangGraph AI Assistant Microservice](#-langgraph-ai-assistant-microservice)
-- [Design System: Neo-Brutalism & Cyber-Brutalism](#-design-system-neo-brutalism--cyber-brutalism)
-- [System Architecture](#-system-architecture)
-- [API Reference](#-api-reference)
-- [Seeded Accounts](#-seeded-accounts)
-- [Local Setup & Installation](#-local-setup--installation)
-- [Deployment Guide](#-deployment-guide)
+## 1. Problem Statement
+
+On university campuses, students frequently have valuable items they no longer need—such as engineering textbooks, scientific calculators, bicycles, coding monitors, lab coats, and hostel furniture. At the same time, other students across all years need these exact items at student-friendly prices.
+
+Existing commercial platforms (e.g., OLX, eBay, Craigslist) fail in this setting because:
+1. **Lack of Campus Trust:** Anyone on the internet can list items, leading to scams and safety concerns.
+2. **Shipping & Packaging Friction:** Second-hand bulky hostel items (bicycles, chairs, coolers) are impractical and expensive to ship.
+3. **Unnecessary Payment Gateways:** Online transactions attract 3–15% platform fees, payment disputes, and gateway charges that students want to avoid.
 
 ---
 
-## 🌟 Overview
+## 2. Solution
 
-**MarketPulse** connects independent creators, studios, and hardware brands with shoppers in a unified e-commerce experience. 
-
-Customers can add products from multiple distinct vendor stores into a single cart and check out in one transaction. The platform automatically partitions the order into independent vendor sub-orders, assigns tracking numbers, routes payouts according to platform take-rate commissions, and maintains an immutable double-entry financial ledger.
-
----
-
-## 🚀 Key Features
-
-### 🤖 1. LangGraph AI Shopping Agent
-* **Strict Domain Guardrail Engine**: Sandboxed exclusively to MarketPulse marketplace content. Out-of-domain queries (general trivia, homework, unrelated coding) are strictly refused with a polite redirection.
-* **Live Catalog & Inventory Tooling**: Directly queries MongoDB to search products by keywords, categories, pricing, stock levels, and vendor store ratings.
-* **Order Tracking & Policy Assistant**: Authenticated users can query their live order shipping statuses, carrier updates, escrow payouts, and dispute policies.
-* **Interactive UI Product Cards**: Embedded cards within the chat drawer allowing 1-click product modal viewing and quick addition to cart.
-
-### 🛍️ 2. Customer Storefront & Catalog
-* **Multi-Faceted Search & Filters**: Search by keywords, categories (*Electronics, Audio, Workspace, Peripherals*), price sliders, and in-stock status.
-* **Dedicated Vendor Storefront Pages**: Click any creator or merchant badge to visit their dedicated store profile (`/stores/:slug`), view store ratings, bio, direct warranty guarantees, and store-specific catalog.
-* **Product Reviews & Star Ratings**: Verified customer reviews with 1–5 star ratings, feedback comments, and real-time average star calculation.
-* **Wishlist & Saved Items**: 1-click heart toggle on product cards to save items, view dedicated wishlist drawer, and move saved items directly to the cart.
-
-### 💳 3. Multi-Method Checkout & Instant Free UPI
-* **Unified Multi-Vendor Cart**: Combines items from multiple merchants with grouped sub-totals.
-* **Instant Free UPI Gateway**: Dynamic UPI intent link (`upi://pay?...`) with real-time rendered QR code and VPA address verification.
-* **Credit / Debit Cards**: Secure formatted card inputs (Card Number, Expiry, CVV).
-* **Cash on Delivery (COD)**: Complete checkout with payment collected upon delivery.
-
-### 📦 4. Visual Order Tracking & Self-Service Cancellation
-* **4-Stage Visual Progress Stepper**: Live tracking states (`Order Placed` ➔ `Processing` ➔ `In Transit` ➔ `Delivered`).
-* **Live Carrier Tracking Sync**: Integrated courier tracking numbers (*FedEx, DHL, Courier Express*) and estimated delivery date calculations.
-* **Atomic Order Cancellation**: 1-click customer cancellation for eligible unshipped orders with automated inventory restoration and double-entry ledger refund reversal.
-
-### 🏪 5. Vendor Management Portal
-* **Store Performance KPIs**: Lifetime gross merchandise value (GMV), settled balances, pending dispatches, and active catalog listings.
-* **Fulfillment Pipeline**: State machine transition buttons (*Start Packing ➔ Dispatch Carrier ➔ Mark Delivered*).
-* **Product Publishing**: Modal to create new SKUs with custom pricing, compare-at discounts, stock counts, and tags.
-
-### 📊 6. Platform Admin Console & Concurrency Lab
-* **Financial Analytics**: MongoDB aggregation pipelines calculating platform commission take, vendor settlement payouts, and average order value (AOV).
-* **Vendor Sales Leaderboard**: Real-time ranking of merchant stores by sales volume and fulfillment rate.
-* **Concurrency Flash-Sale Sandbox**: Developer testing playground to execute 50 parallel checkout bursts against a shared SKU and verify atomic lock guards.
-* **HMAC-SHA256 Webhook Ingress**: Timing-safe cryptographic signature verifier with tamper rejection testing.
+**Campus Exchange** solves this by providing a dedicated, trusted intra-campus peer-to-peer marketplace:
+- **Verified Campus Profiles:** Every student belongs to the college community with verified hostel and department details.
+- **Physical Campus Hand-Offs:** Students meet at convenient campus landmarks (hostel gates, central lawn, library).
+- **Direct Settlement:** Zero payment gateway fees or escrow delays.
+- **Atomic Concurrency Protection:** Single-unit items cannot be double-reserved by multiple buyers simultaneously.
+- **AI-Assisted Natural Language Discovery:** A small, fast AI service helps students find relevant items (e.g. *"I need a used laptop under ₹30,000"*).
 
 ---
 
-## 🧠 LangGraph AI Assistant Microservice
+## 3. Working Features
 
-MarketPulse incorporates a dedicated LangGraph-powered stateful agent workflow connected to Groq's high-speed inference engine (`openai/gpt-oss-120b` & `openai/gpt-oss-20b`).
+### Student Buyer
+- **Browse & Search:** Instant keyword search and filtering by category, condition, price range, and campus pickup location.
+- **Product Details:** High-resolution images, seller hostel location, condition rating, and reason for selling.
+- **Single-Unit Purchase Requests:** Send a reservation request with an optional note (e.g. preferred meetup time).
+- **Duplicate Prevention:** Prevents multiple duplicate pending requests for the same listing.
+- **Request Tracking:** View all sent requests and their live statuses (`PENDING`, `ACCEPTED`, `REJECTED`, `CANCELLED`, `COMPLETED`).
+- **Seller Contact Upon Acceptance:** Once accepted by the seller, the buyer can see the seller's phone number and hostel for hand-off coordination.
 
-```mermaid
-graph TD
-    User([Shopper in Frontend]) -->|Query + Thread ID| FAB[AI Pulse Assistant Drawer]
-    FAB -->|POST /api/v1/ai/chat| Backend[Express Backend / AI Microservice]
+### Student Seller
+- **Create Listings:** Publish listings across categories (Calculators, Books, Electronics, Furniture, Sports, Notes, Essentials) with photos, price, condition, and campus pickup spot.
+- **Listing Management:** Edit price/details or delete listings.
+- **Incoming Requests Pipeline:** Review buyer requests and accept or decline.
+- **Atomic Reservation Lock:** Accepting a request atomically transitions the product to `RESERVED`, preventing conflicting claims.
+- **Mark Sold:** Complete the in-person hand-off and mark the product `SOLD`.
 
-    subgraph LangGraphWorkflow [LangGraph StateGraph Workflow]
-        GuardrailNode[1. Domain Guardrail Node]
-        RouterNode{Is On-Topic?}
-        ToolNode[2. Live MongoDB Tools]
-        RefusalNode[3. Guardrail Refusal Node]
-        ResponseNode[4. Response Synthesizer Node]
-        Memory[(MemorySaver Checkpointer)]
+### Campus Administrator
+- **Platform Analytics:** Real-time metrics on total students, active listings, reserved items, completed hand-offs, and category breakdown.
+- **User Moderation:** View paginated registered students and suspend/remove accounts when necessary.
+- **Catalog Moderation:** Remove inappropriate or prohibited listings.
 
-        GuardrailNode --> RouterNode
-        RouterNode -->|Yes| ToolNode
-        RouterNode -->|No| RefusalNode
-        ToolNode --> ResponseNode
-        RefusalNode --> ENDNode([End State])
-        ResponseNode --> ENDNode
-        ResponseNode <--> Memory
-    end
+### AI Campus Assistant
+- **Natural Language Product Discovery:** Formulate conversational queries like *"Find me a bicycle under ₹4000"* or *"Scientific calculator under ₹800"*.
+- **Parameter Extraction:** Extracts category, price ceiling, and keywords, searching the catalog.
+- **Resilient Fallback:** If the AI service is unavailable, the backend gracefully executes a direct catalog fallback without crashing.
 
-    Backend --> LangGraphWorkflow
-    ToolNode -->|Live Catalog Queries| MongoDB[(MongoDB Atlas)]
-    ResponseNode -->|Groq High-Speed LLM| GroqAPI[Groq API Cloud]
-    ResponseNode -->|Markdown + Product Cards| FAB
+---
+
+## 4. Payment Policy
+
+> **"Campus Exchange does not process online payments. Payment is settled directly between the buyer and seller during the physical campus hand-off."**
+
+The platform intentionally contains **no payment gateways**, no Stripe/Razorpay integrations, no digital wallets, and no online transaction tracking. This keeps the architecture simple, safe, zero-cost, and completely free from escrow disputes.
+
+---
+
+## 5. System Architecture
+
+```text
+               React Frontend (Vite)
+                         │
+                         │ REST API (JSON / JWT)
+                         ▼
+             Node.js / Express Backend (Port 5000)
+                         │
+        ┌────────────────┴────────────────┐
+        ▼                                 ▼
+ MongoDB Database            AI Discovery Service (Port 5002)
+(In-Memory / Atlas)                       │
+                                          ▼
+                                      Groq LLM
+                                 (Llama 3.3 70B)
 ```
 
-### Agent Features
-1. **Domain Guardrails**: Strict classification prompt rejecting queries outside of MarketPulse products, stores, orders, and policies.
-2. **Catalog Search Tools**: Real-time regex and category queries against live MongoDB collections.
-3. **Session Checkpointing**: Retains multi-turn conversation memory keyed by `threadId`.
-4. **Resilient Dual-Mode**: Can run as an independent microservice on port `5002` or directly embedded within the backend server for cloud deployments.
+The system consists of:
+1. **Frontend:** React 18 single-page application built with Vite and Tailwind CSS.
+2. **Backend:** Express REST API managing authentication, products, purchase requests, and admin moderation.
+3. **Database:** MongoDB storing `Users`, `Products`, and `PurchaseRequests`.
+4. **AI Service:** A dedicated Node.js service running on port 5002 that uses Groq Llama 3.3 for natural-language product discovery.
 
 ---
 
-## 🎨 Design System: Neo-Brutalism & Cyber-Brutalism
+## 6. Database Collections & Schema
 
-MarketPulse features a bespoke design system with support for both **Light Neubrutalism** and **Dark Cyber-Brutalism**:
+### 1. `Users`
+| Field | Type | Description |
+|---|---|---|
+| `_id` | ObjectId | Unique student ID |
+| `name` | String | Full student name |
+| `email` | String | Unique campus email address |
+| `password` | String | bcryptjs hashed password (`select: false`) |
+| `role` | String | Exactly one of: `'BUYER'`, `'SELLER'`, `'ADMIN'` |
+| `college` | String | e.g. `'MNIT Jaipur'` |
+| `branch` | String | e.g. `'Computer Science & Engineering'` |
+| `year` | String | e.g. `'4th Year'` |
+| `hostel` | String | Campus residence e.g. `'Hostel 5'` |
+| `phone` | String | Contact number for hand-off meetup coordination |
+| `isSuspended` | Boolean | Account status for moderation |
 
-* **Thick Black Outlines**: Solid `2.5px` and `3px` pure black borders across all interactive cards, modals, and inputs.
-* **Hard Zero-Blur Drop Shadows**: Solid black box shadows (`shadow-brutal-sm`, `shadow-brutal`, `shadow-brutal-xl`) with tactile hover/press elevation transitions.
-* **Light Palette (Neubrutalism)**: Electric Periwinkle canvas (`#5B85FA`), Canary Yellow (`#FEF08A`), Bubblegum Pink (`#FF6B97`), and Cyber Mint (`#6EE7B7`).
-* **Dark Palette (Cyber-Brutalism)**: Deep Obsidian canvas (`#090A10`), Midnight Slate surfaces (`#121522`), Neon Toxic Lime (`#00FF87`), Cyber Neon Yellow (`#FFE600`), and Hot Pink (`#FF2A85`).
-* **1-Click Theme Switcher**: Prominently placed on the navigation bar and login screen with automatic `localStorage` persistence.
+### 2. `Products`
+| Field | Type | Description |
+|---|---|---|
+| `_id` | ObjectId | Unique product ID |
+| `seller` | ObjectId | Reference to `Users` collection |
+| `title` | String | Listing headline (indexed) |
+| `description` | String | Detailed item description (indexed) |
+| `category` | String | Category (e.g. `'Calculators'`, `'Books'`, `'Electronics'`) |
+| `price` | Number | Listing price in INR (₹) |
+| `condition` | String | `'New'`, `'Like New'`, `'Good'`, `'Fair'` |
+| `image` / `images` | String / [String] | Product photos |
+| `pickupLocation` | String | Meeting point (e.g. `'Hostel 5 Gate'`) |
+| `status` | String | `'AVAILABLE'`, `'RESERVED'`, `'SOLD'` (indexed) |
+| `reasonForSelling` | String | e.g. `'Graduating'`, `'Cleared Semester'` |
+
+*Indexes:*
+- `{ status: 1, category: 1, price: 1 }`
+- `{ seller: 1, status: 1 }`
+- `{ title: 'text', description: 'text' }`
+
+### 3. `PurchaseRequests`
+| Field | Type | Description |
+|---|---|---|
+| `_id` | ObjectId | Unique request ID |
+| `product` | ObjectId | Reference to `Products` collection |
+| `buyer` | ObjectId | Reference to requesting `Users` account |
+| `seller` | ObjectId | Reference to listing owner `Users` account |
+| `status` | String | `'PENDING'`, `'ACCEPTED'`, `'REJECTED'`, `'CANCELLED'`, `'COMPLETED'` |
+| `notes` | String | Buyer availability or meetup note |
+| `pickupLocation` | String | Agreed meeting spot |
+
+*Indexes:*
+- `{ buyer: 1, createdAt: -1 }`
+- `{ seller: 1, createdAt: -1 }`
+- `{ product: 1, status: 1 }`
 
 ---
 
-## 🏗️ System Architecture
+## 7. Product Lifecycle & Concurrency Control
 
-```mermaid
-flowchart TD
-    Client["React 18 SPA (Vite + Tailwind)"] -->|JWT Bearer + Idempotency-Key| Gateway["Express.js API Gateway (/api/v1)"]
-
-    subgraph "Backend & AI Services"
-        Gateway --> Auth["RBAC Auth (Customer / Vendor / Admin)"]
-        Gateway --> RateLimit["Sliding-Window Rate Limiter"]
-        Gateway --> Idemp["Idempotency Cache Middleware"]
-        Gateway --> OrderSvc["Order Orchestration & Partitioning"]
-        Gateway --> LedgerSvc["Double-Entry Financial Ledger"]
-        Gateway --> AnalyticsSvc["MongoDB Aggregation Engine"]
-        Gateway --> WebhookSvc["HMAC-SHA256 Webhook Ingress"]
-        Gateway --> AISvc["LangGraph AI Agent (/api/v1/ai)"]
-    end
-
-    subgraph "MongoDB Atlas Cluster"
-        OrderSvc -->|Atomic $inc Lock| ProductsColl[("Products")]
-        OrderSvc -->|ACID Multi-Doc Transaction| OrdersColl[("Master & Sub-Orders")]
-        LedgerSvc -->|Double-Entry Journal| LedgerColl[("Financial Ledger")]
-        Auth --> UsersColl[("Users & Wishlists")]
-        AISvc --> ProductsColl
-    end
-
-    AISvc -->|Groq API Key| Groq[Groq Llama / OSS Engine]
+```text
+          [ AVAILABLE ]
+                │
+    Buyer sends purchase request (PENDING)
+                │
+    Seller ACCEPTS request
+    (Atomic conditional update: status == 'AVAILABLE')
+                │
+                ▼
+          [ RESERVED ] ─── Seller Rejects / Buyer Cancels ───► [ AVAILABLE ]
+                │
+    Physical campus hand-off completed
+                │
+                ▼
+            [ SOLD ]
 ```
 
----
+### Atomic Database Concurrency Lock
+Because a second-hand item has only a single available unit, two buyers might request the same item. To prevent race conditions, reservation uses MongoDB's atomic conditional update:
 
-## 📮 API Reference
+```javascript
+// Atomically reserve only if current status is strictly 'AVAILABLE'
+const reservedProduct = await Product.findOneAndUpdate(
+  { _id: request.product, status: 'AVAILABLE' },
+  { $set: { status: 'RESERVED' } },
+  { new: true }
+);
 
-All backend routes are prefixed with `/api/v1`:
+if (!reservedProduct) {
+  return res.status(409).json({
+    success: false,
+    message: "This item is no longer available or has already been reserved."
+  });
+}
+```
 
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/ai/chat` | Chat with LangGraph AI shopping agent (with domain guardrails) | Public / User |
-| `GET` | `/api/v1/ai/quick-prompts` | Suggested prompt queries for quick shopping actions | Public |
-| `GET` | `/api/v1/ai/health` | Health and connectivity check for AI inference service | Public |
-| `POST` | `/api/v1/auth/register` | Register customer or vendor store | Public |
-| `POST` | `/api/v1/auth/login` | Sign in with email and password | Public |
-| `GET` | `/api/v1/auth/me` | Fetch active user profile & store | Bearer JWT |
-| `POST` | `/api/v1/auth/wishlist/:id` | Toggle product in customer wishlist | Customer |
-| `GET` | `/api/v1/products` | Search catalog with filters, sorting, and pagination | Public |
-| `POST` | `/api/v1/products` | Create a new product listing | Vendor / Admin |
-| `POST` | `/api/v1/products/:id/reviews` | Submit a verified 1–5 star review | Customer |
-| `GET` | `/api/v1/stores/:slug` | Retrieve vendor storefront details and catalog | Public |
-| `POST` | `/api/v1/orders` | Checkout cart with atomic stock reservation | Customer |
-| `GET` | `/api/v1/orders/mine` | List customer orders and visual tracking state | Customer |
-| `PATCH`| `/api/v1/orders/:id/cancel` | Cancel order, refund ledger, and restore stock | Customer |
-| `GET` | `/api/v1/vendor/dashboard` | Vendor earnings and fulfillment pipeline | Vendor |
-| `PATCH`| `/api/v1/vendor/orders/:orderId/suborders/:subOrderId/status` | Update fulfillment state & tracking | Vendor |
-| `GET` | `/api/v1/analytics/platform` | Aggregate GMV, revenue, and store leaderboard | Admin |
-| `POST` | `/api/v1/webhooks/payment` | HMAC-SHA256 verified payment event ingress | Signature Header |
+If two buyers submit requests and the seller accepts one, any subsequent accept operation fails atomically with `409 Conflict`. No distributed locks or external services are needed.
 
 ---
 
-## 👥 Seeded Accounts
+## 8. Business Rules
 
-The database comes pre-seeded with test accounts:
-
-| Role | Email | Password | Access Details |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `admin@marketpulse.io` | `Password123!` | Full Platform Hub, Aggregation Analytics & Concurrency Lab |
-| **Tech Vendor** | `vendor.tech@marketpulse.io` | `Password123!` | Apex Robotics & Gear (10% Take-Rate) |
-| **Artisan Vendor** | `vendor.artisan@marketpulse.io` | `Password123!` | Kuro Studio Crafted (12% Take-Rate) |
-| **Customer** | `customer@marketpulse.io` | `Password123!` | Shopper Profile, Wishlist & Order History |
+1. **SOLD Protection:** A buyer cannot create a purchase request for a `SOLD` item (returns `400 Bad Request`).
+2. **Self-Purchase Prevention:** A seller cannot purchase their own listing (returns `400 Bad Request`).
+3. **Ownership Guard:** Only the product owner or an administrator can edit, update, or delete a listing (returns `403 Forbidden`).
+4. **Seller Decision Authority:** Only the seller can accept, decline, or complete an incoming purchase request.
+5. **Admin Permissions:** Only users with role `ADMIN` can access `/api/admin/*` endpoints.
+6. **Duplicate Request Prevention:** A buyer cannot submit multiple active (`PENDING` or `ACCEPTED`) requests for the same product (returns `409 Conflict`).
+7. **Reversion on Cancellation:** If an accepted request is rejected or cancelled, the product reverts to `AVAILABLE`.
 
 ---
 
-## 💻 Local Setup & Installation
+## 9. REST API Endpoints
 
-### 1. Prerequisites
-* **Node.js**: v18.0.0 or higher
-* **npm**: v9.0.0 or higher
-* **MongoDB**: Local instance or free MongoDB Atlas URI
-* **Groq API Key**: (Included in `.env.example`)
+### Authentication (`/api/auth`)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register a new student account (`BUYER` or `SELLER`) | Public |
+| `POST` | `/api/auth/login` | Sign in with email and password | Public |
+| `POST` | `/api/auth/demo-login` | 1-Click demo sign-in for Buyer, Seller, or Admin | Public |
+| `GET` | `/api/auth/me` | Fetch authenticated profile | Bearer JWT |
+| `PUT` | `/api/auth/profile` | Update hostel, phone, branch, or year | Bearer JWT |
 
-### 2. Clone Repository & Install Dependencies
+### Products (`/api/products`)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/products` | Browse & search listings (`search`, `category`, `minPrice`, `maxPrice`, `page`, `limit`) | Public |
+| `GET` | `/api/products/:id` | Get product details with seller info | Public |
+| `POST` | `/api/products` | Create a new listing | `SELLER`, `ADMIN` |
+| `PATCH` | `/api/products/:id` | Update listing price or details | Owner / `ADMIN` |
+| `DELETE` | `/api/products/:id` | Delete a listing | Owner / `ADMIN` |
+| `GET` | `/api/products/seller/me`| View listings owned by current seller | `SELLER`, `ADMIN` |
+
+### Purchase Requests (`/api/requests`)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/requests` | Send purchase request for an available item | `BUYER`, `ADMIN` |
+| `GET` | `/api/requests/buyer` | View requests sent by the authenticated buyer | Bearer JWT |
+| `GET` | `/api/requests/seller` | View requests received by the seller | `SELLER`, `ADMIN` |
+| `GET` | `/api/requests/:id` | Get details of a single request | Parties / `ADMIN`|
+| `PATCH` | `/api/requests/:id/accept` | Accept request (atomic conditional lock) | Owner / `ADMIN` |
+| `PATCH` | `/api/requests/:id/reject` | Reject request (restores availability) | Owner / `ADMIN` |
+| `PATCH` | `/api/requests/:id/cancel` | Cancel purchase request | Parties / `ADMIN`|
+| `PATCH` | `/api/requests/:id/complete`| Mark in-person hand-off complete (`SOLD`) | Owner / `ADMIN` |
+
+### Administration (`/api/admin`)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/admin/stats` | View marketplace overview & metrics | `ADMIN` only |
+| `GET` | `/api/admin/users` | List registered campus students (paginated) | `ADMIN` only |
+| `DELETE` | `/api/admin/users/:id` | Remove/suspend a student account | `ADMIN` only |
+| `GET` | `/api/admin/products` | List all listings across campus | `ADMIN` only |
+| `DELETE` | `/api/admin/products/:id`| Delete an inappropriate listing | `ADMIN` only |
+
+### AI Discovery (`/api/ai`)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/ai/search` | Natural language product search | Public |
+| `GET` | `/api/ai/quick-prompts`| Get popular campus search prompts | Public |
+| `GET` | `/api/ai/health` | Health check for AI service | Public |
+
+---
+
+## 10. AI Service Architecture & Failure Handling
+
+The AI Service is a lightweight microservice running on port 5002:
+
+```text
+User Input: "I need a scientific calculator under ₹800"
+                       │
+                       ▼
+             1. Parameter Extraction
+     { keyword: "scientific calculator",
+       category: "Calculators",
+       maxPrice: 800 }
+                       │
+                       ▼
+              2. Catalog Query
+   Product.find({ status: 'AVAILABLE', price: { $lte: 800 } })
+                       │
+                       ▼
+             3. Response Synthesis
+   "Found 1 available Casio fx-991EX for ₹650 at Hostel 5 Gate."
+```
+
+### Resilient Failure Handling
+The main Express backend never crashes if the AI service is offline:
+- The backend calls the AI service with a **3.5-second abort timeout**.
+- If the AI service is unreachable, times out, or throws an error, the backend executes an in-process regex/token catalog search fallback directly against MongoDB.
+- Normal marketplace browsing and reservations are completely unaffected.
+
+---
+
+## 11. Getting Started & Setup
+
+### Prerequisites
+- Node.js 18+ (tested on Node 20 & 24)
+- npm 9+
+- Python 3 (for scripting utilities)
+- *Note: Zero external database setup is required! If no remote MongoDB is configured, the backend automatically launches an in-memory MongoDB instance.*
+
+### Installation
+
 ```bash
-git clone https://github.com/Pranav-by/MarketPulse.git
-cd MarketPulse
+# Clone the repository
+git clone https://github.com/your-username/CampusExchange.git
+cd CampusExchange
 
-# Install root, backend, frontend, and ai-service dependencies
-npm run install:all
+# Install dependencies across all packages
+npm install
+npm install --prefix backend
+npm install --prefix frontend
+npm install --prefix ai-service
 ```
 
-### 3. Environment Variables
-Create a `.env` file in `backend/.env` and `ai-service/.env`:
+### Environment Configuration
+
+1. **Backend (`backend/.env`):**
 ```env
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.lkee1f1.mongodb.net/marketpulse?retryWrites=true&w=majority
-JWT_SECRET=marketpulse_jwt_super_secret_key_2026_production_grade
+# Leave blank for zero-config automatic in-memory MongoDB
+MONGODB_URI=
+JWT_SECRET=campusexchange_jwt_super_secret_key_2026
 JWT_EXPIRES_IN=7d
-JWT_REFRESH_SECRET=marketpulse_refresh_super_secret_key_2026_secure
-JWT_REFRESH_EXPIRES_IN=30d
-WEBHOOK_SECRET=whsec_marketpulse_hmac_sha256_mock_key_2026
 CLIENT_URL=http://localhost:5173
+AI_SERVICE_URL=http://localhost:5002/api/ai
+```
+
+2. **AI Service (`ai-service/.env`):**
+```env
+PORT=5002
+NODE_ENV=development
 GROQ_API_KEY=your_groq_api_key_here
+BACKEND_URL=http://localhost:5000
 ```
 
-### 4. Seed Database & Run Locally
+### Running the Application
+
 ```bash
-# Seed initial categories, sample stores, and products
-npm run seed
-
-# Run backend (:5000), frontend (:5173), and AI service (:5002) concurrently
+# Option 1: Start all services concurrently (Frontend, Backend, AI Service)
 npm run dev
+
+# Option 2: Start services individually in separate terminals
+# Terminal 1 - Backend:
+npm run dev --prefix backend
+
+# Terminal 2 - Frontend:
+npm run dev --prefix frontend
+
+# Terminal 3 - AI Service:
+npm run dev --prefix ai-service
 ```
 
-Open **http://localhost:5173** in your browser.
+Access the application in your browser at: `http://localhost:5173`
+
+### Pre-Configured Demo Accounts (1-Click Login)
+- **Student Buyer:** `amit@mnit.ac.in` | `Password123!` (2nd Year Mechanical, Hostel 3)
+- **Student Seller:** `rahul@mnit.ac.in` | `Password123!` (4th Year CSE, Hostel 5)
+- **Campus Admin:** `admin@campusexchange.ac.in` | `Password123!` (Faculty Coordinator)
 
 ---
 
-## 🌐 Deployment Guide
+## 12. Automated Testing
 
-### Frontend Deployment (Vercel)
-1. Import repository on **[Vercel](https://vercel.com)**.
-2. Set **Root Directory** to `frontend`.
-3. Set **Framework Preset** to `Vite`.
-4. Add Environment Variable:
-   * `VITE_API_URL` = `https://your-backend-service.onrender.com/api/v1`
-5. Click **Deploy**.
+The repository contains an automated test suite verifying all critical business rules:
 
-### Backend Deployment (Render)
-1. Create a new **Web Service** on **[Render](https://render.com)**.
-2. Set **Root Directory** to `backend`.
-3. Set **Build Command** to `npm install`.
-4. Set **Start Command** to `npm start`.
-5. Add the environment variables from `backend/.env` (including `GROQ_API_KEY` and `MONGODB_URI`).
-6. Deploy and copy your production backend URL into Vercel's `VITE_API_URL`.
+```bash
+# Run the automated verification test suite
+npm test
+```
 
-*(Render Blueprint [`render.yaml`](render.yaml) is also provided for automatic multi-service deployment).*
+### What the Test Suite Verifies (25 Automated Checks):
+1. **Authentication:** Buyer registration, email uniqueness, password verification, JWT generation.
+2. **Role Authorization:** Verifies buyers cannot post listings; non-admins cannot access admin stats.
+3. **Product Ownership:** Verifies only the listing owner can update price or delete the listing.
+4. **Self-Purchase Prevention:** Asserts sellers cannot request their own item (Rule 2).
+5. **Duplicate Prevention:** Asserts duplicate active requests return `409 Conflict` (Rule 6).
+6. **Atomic Concurrency:** Simulates two buyers requesting the same item; verifies only one reservation succeeds.
+7. **Physical Hand-Off Completion:** Verifies marking an exchange complete updates status to `SOLD`.
+8. **SOLD Protection:** Asserts new requests on `SOLD` items are rejected with `400 Bad Request` (Rule 1).
+9. **Admin Moderation:** Verifies admin user/product retrieval and moderation.
+10. **AI Discovery:** Verifies natural-language search and catalog fallback resilience.
 
 ---
 
-## 📄 License
-This project is open-source and licensed under the [MIT License](LICENSE).
+## 13. Placement Interview Q&A (18 Realistic Questions)
+
+### Q1: What is the high-level architecture of Campus Exchange?
+**Answer:** Campus Exchange uses a three-tier architecture:
+- React (Vite) frontend for user interaction.
+- Express REST API for business logic, validation, authentication, and database access.
+- MongoDB database storing Users, Products, and PurchaseRequests.
+- A small, decoupled AI microservice that translates natural-language queries into catalog searches using Groq Llama 3.3.
+
+### Q2: Why did you eliminate online payment processing?
+**Answer:** University second-hand transactions happen in person between students living in the same hostels or campus areas. Introducing payment gateways (Stripe/Razorpay) adds merchant fees (2–3%), payout delays, refund disputes, and compliance complexity. Students prefer inspecting the item in person and settling payment directly (via cash or peer-to-peer UPI) upon hand-off.
+
+### Q3: How do you prevent two buyers from reserving the same product at the same time?
+**Answer:** Each listing represents a unique physical item with a single available unit. When a seller accepts a reservation request, we execute a database-level atomic conditional update:
+```javascript
+Product.findOneAndUpdate({ _id: productId, status: 'AVAILABLE' }, { $set: { status: 'RESERVED' } });
+```
+Because MongoDB documents are updated atomically, only the first request matches `{ status: 'AVAILABLE' }`. The second request returns `null`, and our backend returns `409 Conflict`. No distributed locks or Redis are needed.
+
+### Q4: How is authentication and role-based access control (RBAC) implemented?
+**Answer:** Authentication uses JWT (JSON Web Tokens) signed with HMAC-SHA256 and passwords hashed using bcryptjs (salt rounds = 10). The `protect` middleware verifies the token and attaches `req.user`. The `authorize(...roles)` middleware checks `req.user.role` against allowed roles (`BUYER`, `SELLER`, `ADMIN`) and returns `403 Forbidden` if unauthorized.
+
+### Q5: How do you prevent a buyer from spamming purchase requests for the same listing?
+**Answer:** Before creating a `PurchaseRequest`, we query the database for existing active requests:
+```javascript
+const existing = await PurchaseRequest.findOne({
+  product: productId,
+  buyer: req.user._id,
+  status: { $in: ['PENDING', 'ACCEPTED'] }
+});
+```
+If an active request exists, the server returns `409 Conflict: "You already have an active request for this item."`
+
+### Q6: What happens to a product listing if an accepted purchase request is cancelled?
+**Answer:** If an accepted request is rejected or cancelled by either student, the backend atomically reverts the product status back to `AVAILABLE`:
+```javascript
+await Product.findOneAndUpdate({ _id: productId, status: 'RESERVED' }, { $set: { status: 'AVAILABLE' } });
+```
+This restores the item so other campus students can discover and request it.
+
+### Q7: Why did you separate the AI service instead of embedding it into the main backend?
+**Answer:** Separating the AI service decouples core marketplace reliability from external LLM API availability and latency. LLM inferences can take 500ms to 2s or fail if the API quota is exceeded. Isolating it ensures that an AI outage or slow response never blocks normal marketplace operations or crashes the main backend.
+
+### Q8: How does the backend handle failures or timeouts from the AI service?
+**Answer:** The Express backend calls the AI service with an `AbortController` set to a 3.5-second timeout. If the AI service fails or times out, the `try/catch` block catches the error and executes an in-process catalog search using token extraction and price filtering directly against MongoDB. The user receives matching listings without noticing an outage.
+
+### Q9: What database indexes did you create in MongoDB and why?
+**Answer:** We created indexes strictly based on actual query patterns:
+1. `Products`: `{ status: 1, category: 1, price: 1 }` for filtered catalog browsing; `{ seller: 1, status: 1 }` for seller listing views; text index `{ title: 'text', description: 'text' }` for keyword searches.
+2. `PurchaseRequests`: `{ buyer: 1, createdAt: -1 }` and `{ seller: 1, createdAt: -1 }` for order histories; `{ product: 1, status: 1 }` for concurrency checks and duplicate prevention.
+3. `Users`: `{ email: 1 }` unique index for quick credential lookups during login.
+
+### Q10: How do you prevent N+1 query problems when fetching listings and requests?
+**Answer:** In Mongoose, we use `.populate()` on relational fields (`seller`, `buyer`, `product`) with explicit field projections (e.g. `populate('seller', 'name email hostel phone')`). Mongoose batches these lookups into a single `$in` query across IDs rather than executing individual queries per record.
+
+### Q11: How do you handle pagination in product and user listings?
+**Answer:** We implement query-parameter pagination using `page` and `limit`:
+```javascript
+const pageNum = Math.max(1, parseInt(req.query.page) || 1);
+const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+const skip = (pageNum - 1) * limitNum;
+const [products, total] = await Promise.all([
+  Product.find(query).skip(skip).limit(limitNum).lean(),
+  Product.countDocuments(query)
+]);
+```
+We also cap `limit` at 50 to prevent denial-of-service attempts by requesting huge datasets.
+
+### Q12: Why do you use `.lean()` on MongoDB find queries?
+**Answer:** `.lean()` tells Mongoose to return plain JavaScript objects instead of heavy Mongoose Document instances with change tracking, virtuals, and internal state. For read-only operations like catalog browsing, this reduces memory overhead and improves response times by approximately 3–5x.
+
+### Q13: How does input validation work in the backend?
+**Answer:** We use Zod schemas in a reusable `validate(schema)` middleware. User input is validated before reaching the controller. For example, if a price is negative or an email is malformed, Zod throws a validation error and returns `400 Bad Request` with clear field errors.
+
+### Q14: What is centralized error handling and how is it implemented?
+**Answer:** Instead of having repetitive try/catch blocks that construct custom error responses, Express routes forward errors to `next(err)`. A single `errorHandler` middleware intercepts all errors, maps Mongoose `CastError` to 400, duplicate keys (`11000`) to 409, and JWT errors to 401, returning a consistent `{ success: false, message: ... }` response while hiding stack traces in production.
+
+### Q15: Can a buyer purchase a product that is already marked SOLD?
+**Answer:** No. Rule 1 checks:
+```javascript
+if (product.status === 'SOLD') {
+  return res.status(400).json({ success: false, message: "Cannot request item: This listing has already been SOLD." });
+}
+```
+This is validated before creating any database record.
+
+### Q16: How does the frontend handle empty, loading, and error states?
+**Answer:** Every view component uses reactive states (`loading`, `error`, data array). If `loading` is true, a spinner or skeleton is displayed. If `error` is populated, a friendly error banner with a retry button appears. If the response array is empty, a helpful empty-state screen appears (e.g., *"No items found in this category"*).
+
+### Q17: Why did you choose React + Vite instead of Next.js for this project?
+**Answer:** For an intra-campus marketplace with authenticated student dashboards, interactive modals, and local state management, a Client-Side Rendered (CSR) Single Page Application using Vite is lightweight, fast to bundle, has sub-second Hot Module Replacement (HMR), and avoids server-side rendering (SSR) hydration complexities.
+
+### Q18: What would you improve if this project scaled to 50,000 students across 10 campuses?
+**Answer:**
+1. **Multi-Campus Isolation:** Add a `campusId` index to partition listings and searches per college.
+2. **Image Storage:** Migrate local image links to Cloudinary or AWS S3 with signed direct uploads.
+3. **WebSockets:** Add Socket.io for instant notifications when a seller accepts a buyer's request.
+4. **Read Replicas:** Route read-heavy product searches to MongoDB secondary replicas.

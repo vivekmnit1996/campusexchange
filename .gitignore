@@ -41,3 +41,5 @@ npm-debug.log*
 scratch/
 tmp/
 temp/
+backend/uploads/*
+!backend/uploads/.gitkeep

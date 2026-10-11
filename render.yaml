@@ -1,7 +1,7 @@
 services:
-  # MarketPulse Backend API
+  # CampusExchange Backend API
   - type: web
-    name: marketpulse-backend
+    name: campusexchange-backend
     env: node
     rootDir: backend
     buildCommand: npm install
@@ -20,12 +20,12 @@ services:
       - key: AI_SERVICE_URL
         fromService:
           type: web
-          name: marketpulse-ai-service
+          name: campusexchange-ai-service
           property: host
 
-  # MarketPulse LangGraph AI Microservice
+  # CampusExchange LangGraph AI Microservice
   - type: web
-    name: marketpulse-ai-service
+    name: campusexchange-ai-service
     env: node
     rootDir: ai-service
     buildCommand: npm install

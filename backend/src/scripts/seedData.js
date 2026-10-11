@@ -1,319 +1,289 @@
 import mongoose from 'mongoose';
 import { User } from '../models/User.js';
-import { Store } from '../models/Store.js';
 import { Product } from '../models/Product.js';
-import { Order } from '../models/Order.js';
-import { LedgerEntry } from '../models/LedgerEntry.js';
-import { WebhookEvent } from '../models/WebhookEvent.js';
-import { IdempotencyRecord } from '../models/IdempotencyRecord.js';
+import { PurchaseRequest } from '../models/PurchaseRequest.js';
 
 export const seedDatabase = async () => {
   try {
     console.log('🧹 Purging existing marketplace data...');
     await Promise.all([
       User.deleteMany({}),
-      Store.deleteMany({}),
       Product.deleteMany({}),
-      Order.deleteMany({}),
-      LedgerEntry.deleteMany({}),
-      WebhookEvent.deleteMany({}),
-      IdempotencyRecord.deleteMany({}),
+      PurchaseRequest.deleteMany({}),
     ]);
 
-    console.log('👥 Seeding RBAC Users & Stores...');
-    // 1. Admin
+    console.log('👥 Seeding CampusExchange Users (Admin, Sellers, Buyers)...');
+
+    // 1. Campus Admin
     const admin = await User.create({
-      name: 'Elena Rostova (Admin)',
-      email: 'admin@marketpulse.io',
+      name: 'Prof. Aruna Sharma (Campus Admin)',
+      email: 'admin@campusexchange.ac.in',
       password: 'Password123!',
-      role: 'admin',
+      role: 'ADMIN',
+      college: 'MNIT Jaipur',
+      branch: 'Faculty Coordinator',
+      year: 'Faculty',
+      hostel: 'Faculty Quarters B-12',
+      phone: '+91 94140 12345',
       avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
     });
 
-    // 2. Tech Vendor User & Store
-    const techUser = await User.create({
-      name: 'Marcus Vance (Tech Lead)',
-      email: 'vendor.tech@marketpulse.io',
+    // 2. Verified Students (can both buy and sell)
+    const rahul = await User.create({
+      name: 'Rahul Sharma',
+      email: 'rahul@mnit.ac.in',
       password: 'Password123!',
-      role: 'vendor',
+      role: 'STUDENT',
+      college: 'MNIT Jaipur',
+      branch: 'Computer Science & Engineering',
+      year: '4th Year',
+      hostel: 'Hostel 5 (Room 304)',
+      phone: '+91 98765 43210',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
     });
 
-    const techStore = await Store.create({
-      name: 'Apex Robotics & Gear',
-      slug: 'apex-robotics',
-      owner: techUser._id,
-      description: 'Cutting-edge developer hardware, audiophile monitoring, and precision mechanical peripherals.',
-      logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=256&q=80',
-      banner: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80',
-      commissionRate: 0.10, // 10%
-      balance: 1420.50,
-      totalRevenue: 5240.00,
-      isApproved: true,
-      payoutEmail: 'payouts@apexgear.io',
-    });
-    techUser.store = techStore._id;
-    await techUser.save();
-
-    // 3. Artisan / Fashion Vendor User & Store
-    const artisanUser = await User.create({
-      name: 'Sora Tanaka (Design Lead)',
-      email: 'vendor.artisan@marketpulse.io',
+    const priya = await User.create({
+      name: 'Priya Verma',
+      email: 'priya@mnit.ac.in',
       password: 'Password123!',
-      role: 'vendor',
+      role: 'STUDENT',
+      college: 'MNIT Jaipur',
+      branch: 'Artificial Intelligence & Data Eng',
+      year: '3rd Year',
+      hostel: 'Gargi Hostel (Room 118)',
+      phone: '+91 98123 45678',
       avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80',
     });
 
-    const artisanStore = await Store.create({
-      name: 'Kuro Studio Crafted',
-      slug: 'kuro-studio',
-      owner: artisanUser._id,
-      description: 'Hand-stitched full-grain Italian leather, minimalist workspace accessories, and ergonomic desk mats.',
-      logo: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=256&q=80',
-      banner: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80',
-      commissionRate: 0.12, // 12%
-      balance: 890.00,
-      totalRevenue: 3410.00,
-      isApproved: true,
-      payoutEmail: 'billing@kurostudio.jp',
-    });
-    artisanUser.store = artisanStore._id;
-    await artisanUser.save();
-
-    // 4. Customer
-    const customer = await User.create({
-      name: 'Alex Rivera (Shopper)',
-      email: 'customer@marketpulse.io',
+    const amit = await User.create({
+      name: 'Amit Patel',
+      email: 'amit@mnit.ac.in',
       password: 'Password123!',
-      role: 'customer',
+      role: 'STUDENT',
+      college: 'MNIT Jaipur',
+      branch: 'Mechanical Engineering',
+      year: '2nd Year',
+      hostel: 'Hostel 3 (Room 214)',
+      phone: '+91 98989 87654',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-      walletBalance: 850.00,
     });
 
-    console.log('📦 Seeding Products with Inventory...');
-    const productsData = [
-      {
-        title: 'Neural ANC Studio Pro Headphones',
-        slug: 'neural-anc-studio-pro-headphones',
-        description: 'Planar magnetic active noise-cancelling studio reference monitors with lossless spatial audio decoding and 40-hour battery life.',
-        price: 349.99,
-        compareAtPrice: 429.99,
-        stock: 24,
-        category: 'Audio',
-        tags: ['Audio', 'Noise-Cancelling', 'Wireless', 'Studio'],
-        images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80'],
-        store: techStore._id,
-        rating: 4.9,
-        numReviews: 38,
-        isFeatured: true,
-        attributes: { Driver: '45mm Planar', Battery: '40 Hours', Connectivity: 'Bluetooth 5.4 / USB-C DAC' },
-      },
-      {
-        title: 'Matrix 75% Custom Mechanical Keyboard',
-        slug: 'matrix-75-mechanical-keyboard',
-        description: 'Gasket-mounted aluminum chassis, hot-swappable tactile lubricated switches, screw-in stabilizers, and per-key RGB backlighting.',
-        price: 189.50,
-        compareAtPrice: 220.00,
-        stock: 15,
-        category: 'Electronics',
-        tags: ['Keyboards', 'Peripherals', 'Custom', 'Mechanical'],
-        images: ['https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80'],
-        store: techStore._id,
-        rating: 4.8,
-        numReviews: 29,
-        isFeatured: true,
-        attributes: { Layout: '75% Compact', Switches: 'Gateron Oil King', Keycaps: 'PBT Double-shot' },
-      },
-      {
-        title: '⚡ Flash Sale Exclusive - Ultra Soundbar',
-        slug: 'flash-sale-ultra-soundbar',
-        description: 'Limited edition Dolby Atmos desktop soundbar with dedicated wireless sub-bass transducer. Built for concurrency stress-testing.',
-        price: 99.00,
-        compareAtPrice: 199.00,
-        stock: 3, // Low stock specifically to demo concurrency locking!
-        category: 'Audio',
-        tags: ['Flash Sale', 'Audio', 'Limited'],
-        images: ['https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=800&q=80'],
-        store: techStore._id,
-        rating: 5.0,
-        numReviews: 4,
-        isFeatured: true,
-        attributes: { Output: '120W Peak', Audio: 'Dolby Atmos 5.1' },
-      },
-      {
-        title: 'Full-Grain Tuscan Leather Desk Pad',
-        slug: 'full-grain-tuscan-leather-desk-pad',
-        description: 'Vegetable-tanned artisanal Italian leather mat with burnished edges and non-slip natural wool felt backing.',
-        price: 89.00,
-        compareAtPrice: 110.00,
-        stock: 40,
-        category: 'Workspace',
-        tags: ['Leather', 'Desk Setup', 'Handmade', 'Luxury'],
-        images: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80'],
-        store: artisanStore._id,
-        rating: 4.9,
-        numReviews: 52,
-        isFeatured: true,
-        attributes: { Dimensions: '90cm x 40cm', Leather: 'Tuscan Veg-Tanned', Thickness: '3.5mm' },
-      },
-      {
-        title: 'Minimalist Walnut Laptop Riser Stand',
-        slug: 'minimalist-walnut-laptop-stand',
-        description: 'Solid American walnut curved laptop stand with aerospace-grade anodized aluminum support brackets and passive heat dissipation.',
-        price: 74.50,
-        compareAtPrice: 95.00,
-        stock: 18,
-        category: 'Workspace',
-        tags: ['Woodwork', 'Ergonomics', 'Walnut'],
-        images: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80'],
-        store: artisanStore._id,
-        rating: 4.7,
-        numReviews: 19,
-        isFeatured: false,
-        attributes: { Material: 'Solid Walnut', Compatibility: 'Up to 16-inch Laptops' },
-      },
-      {
-        title: 'Precision 4K UHD Ultra-Wide 34" Monitor',
-        slug: 'precision-4k-ultra-wide-monitor',
-        description: 'Color-calibrated 10-bit IPS panel, 100% DCI-P3 gamut coverage, 90W USB-C Power Delivery hub, and 144Hz refresh rate.',
-        price: 649.00,
-        compareAtPrice: 799.00,
-        stock: 8,
-        category: 'Electronics',
-        tags: ['Monitors', 'Display', '4K', 'Ultrawide'],
-        images: ['https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80'],
-        store: techStore._id,
-        rating: 4.8,
-        numReviews: 14,
-        isFeatured: false,
-        attributes: { Resolution: '3440 x 1440', RefreshRate: '144Hz', ColorGamut: '100% DCI-P3' },
-      },
-    ];
-
-    const products = await Product.insertMany(productsData);
-
-    console.log('🛒 Seeding Multi-Vendor Orders & Financial Ledgers...');
-    // Seed an initial multi-vendor order spanning both stores
-    const subOrder1Total = products[0].price * 1;
-    const fee1 = Number((subOrder1Total * 0.10).toFixed(2));
-    const payout1 = Number((subOrder1Total - fee1).toFixed(2));
-
-    const subOrder2Total = products[3].price * 2;
-    const fee2 = Number((subOrder2Total * 0.12).toFixed(2));
-    const payout2 = Number((subOrder2Total - fee2).toFixed(2));
-
-    const grandTotal = subOrder1Total + subOrder2Total;
-    const totalFee = fee1 + fee2;
-    const totalPayout = payout1 + payout2;
-
-    const sampleOrder = await Order.create({
-      orderNumber: 'MP-DEMO-2026-8812',
-      customer: customer._id,
-      customerInfo: {
-        name: customer.name,
-        email: customer.email,
-        address: '742 Evergreen Terrace',
-        city: 'Seattle',
-        postalCode: '98101',
-        country: 'USA',
-      },
-      items: [
-        { product: products[0]._id, title: products[0].title, price: products[0].price, quantity: 1, store: techStore._id, image: products[0].images[0] },
-        { product: products[3]._id, title: products[3].title, price: products[3].price, quantity: 2, store: artisanStore._id, image: products[3].images[0] },
-      ],
-      vendorSubOrders: [
-        {
-          store: techStore._id,
-          vendor: techUser._id,
-          subTotal: subOrder1Total,
-          platformFee: fee1,
-          vendorPayout: payout1,
-          status: 'SHIPPED',
-          items: [{ product: products[0]._id, title: products[0].title, price: products[0].price, quantity: 1, store: techStore._id, image: products[0].images[0] }],
-          trackingNumber: 'UPS-9482910482',
-          carrier: 'UPS 2nd Day Air',
-        },
-        {
-          store: artisanStore._id,
-          vendor: artisanUser._id,
-          subTotal: subOrder2Total,
-          platformFee: fee2,
-          vendorPayout: payout2,
-          status: 'PROCESSING',
-          items: [{ product: products[3]._id, title: products[3].title, price: products[3].price, quantity: 2, store: artisanStore._id, image: products[3].images[0] }],
-          trackingNumber: '',
-          carrier: 'USPS Priority',
-        },
-      ],
-      totalAmount: grandTotal,
-      totalPlatformFee: totalFee,
-      totalVendorPayout: totalPayout,
-      paymentStatus: 'PAID',
-      paymentMethod: 'credit_card',
-      paymentIntentId: 'pi_demo_seed_849204',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    const sneha = await User.create({
+      name: 'Sneha Gupta',
+      email: 'sneha@mnit.ac.in',
+      password: 'Password123!',
+      role: 'STUDENT',
+      college: 'MNIT Jaipur',
+      branch: 'Electrical Engineering',
+      year: '1st Year',
+      hostel: 'Gargi Hostel (Room 205)',
+      phone: '+91 97777 11223',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80',
     });
 
-    // Seed Ledger Entries
-    await LedgerEntry.insertMany([
-      {
-        transactionId: 'TX-SEED-001',
-        order: sampleOrder._id,
-        user: customer._id,
-        type: 'CUSTOMER_DEBIT',
-        amount: -grandTotal,
-        balanceAfter: customer.walletBalance,
-        description: `Payment for Order #${sampleOrder.orderNumber}`,
-      },
-      {
-        transactionId: 'TX-SEED-001',
-        order: sampleOrder._id,
-        store: techStore._id,
-        user: techUser._id,
-        type: 'VENDOR_CREDIT',
-        amount: payout1,
-        balanceAfter: techStore.balance,
-        description: `Vendor proceeds for Sub-Order #${sampleOrder.orderNumber}-apex-robotics`,
-      },
-      {
-        transactionId: 'TX-SEED-001',
-        order: sampleOrder._id,
-        store: techStore._id,
-        type: 'PLATFORM_COMMISSION',
-        amount: fee1,
-        balanceAfter: fee1,
-        description: `Platform fee (10%) for Sub-Order #${sampleOrder.orderNumber}`,
-      },
-      {
-        transactionId: 'TX-SEED-001',
-        order: sampleOrder._id,
-        store: artisanStore._id,
-        user: artisanUser._id,
-        type: 'VENDOR_CREDIT',
-        amount: payout2,
-        balanceAfter: artisanStore.balance,
-        description: `Vendor proceeds for Sub-Order #${sampleOrder.orderNumber}-kuro-studio`,
-      },
-      {
-        transactionId: 'TX-SEED-001',
-        order: sampleOrder._id,
-        store: artisanStore._id,
-        type: 'PLATFORM_COMMISSION',
-        amount: fee2,
-        balanceAfter: fee2,
-        description: `Platform fee (12%) for Sub-Order #${sampleOrder.orderNumber}`,
-      },
-    ]);
+    console.log('📦 Seeding Campus Second-Hand Listings...');
 
-    console.log('✅ Seed Complete! Multi-vendor marketplace initialized with RBAC users, stores, products, orders, and ledger.');
+    const p1 = await Product.create({
+      seller: rahul._id,
+      title: 'Casio fx-991EX ClassWiz Scientific Calculator',
+      description: 'Essential calculator for engineering maths and physics exams. Crisp high-resolution LCD display, solar backup, QR code function. Used gently for 2 semesters, all buttons crisp.',
+      category: 'Calculators',
+      price: 650,
+      quantity: 1,
+      stock: 1,
+      condition: 'Like New',
+      image: 'https://images.unsplash.com/photo-1611125832047-1d7ad1e8e485?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1611125832047-1d7ad1e8e485?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Hostel 5 Gate / Central Lawn',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Graduating',
+    });
+
+    const p2 = await Product.create({
+      seller: rahul._id,
+      title: 'Dell 24" IPS Coding Monitor (1080p, 75Hz)',
+      description: 'Ultra-thin bezel monitor with eye-care flicker-free mode. Perfect for dual-screen programming and web development. Includes original HDMI cable and power adapter.',
+      category: 'Electronics',
+      price: 5200,
+      quantity: 1,
+      stock: 1,
+      condition: 'Like New',
+      image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Hostel 5 Room 304',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Graduating',
+    });
+
+    const p3 = await Product.create({
+      seller: priya._id,
+      title: 'Hero Sprint 26T Campus Bicycle with Front Basket',
+      description: 'Single-speed campus commuter bicycle. Recently serviced with new brake pads and lubricated chain. Very sturdy for riding between hostel and lecture theaters. Number lock included.',
+      category: 'Sports equipment',
+      price: 2400,
+      quantity: 1,
+      stock: 1,
+      condition: 'Good',
+      image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Gargi Hostel Cycle Stand',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Graduating',
+    });
+
+    const p4 = await Product.create({
+      seller: priya._id,
+      title: 'Engineering Mathematics Vol 1 & 2 (Erwin Kreyszig)',
+      description: 'Complete 10th Edition Advanced Engineering Mathematics. Covers Linear Algebra, Calculus, Differential Equations, and Complex Analysis. Clean pages with minimal pencil marks.',
+      category: 'Books',
+      price: 450,
+      quantity: 1,
+      stock: 1,
+      condition: 'Good',
+      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Central Library Lawn',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Cleared Semester',
+    });
+
+    const p5 = await Product.create({
+      seller: rahul._id,
+      title: 'Hostel Wooden Study Desk & Ergonomic Mesh Chair',
+      description: 'Compact wooden study table with bookshelf rack and breathable mesh swivel chair. Ideal for hostel rooms. Table is rock-solid and disassembles for easy transport.',
+      category: 'Furniture',
+      price: 1800,
+      quantity: 1,
+      stock: 1,
+      condition: 'Good',
+      image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Hostel 5 Common Room',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Graduating',
+    });
+
+    const p6 = await Product.create({
+      seller: priya._id,
+      title: 'Pigeon 1.5L Stainless Steel Electric Kettle',
+      description: 'Boils water and makes midnight hostel Maggi in 3 minutes! Auto-shutoff safety feature. Clean, descaled heating element with standard 3-pin plug.',
+      category: 'Other useful student items',
+      price: 350,
+      quantity: 2,
+      stock: 2,
+      condition: 'Good',
+      image: 'https://images.unsplash.com/photo-1594213114663-d94db9b17125?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1594213114663-d94db9b17125?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Campus Canteen / Dispensary',
+      status: 'AVAILABLE',
+      reasonForSelling: 'Moving Off-Campus',
+    });
+
+    const p7 = await Product.create({
+      seller: rahul._id,
+      title: 'Yonex Muscle Power 29 Badminton Racket & 3 Mavis 350 Shuttles',
+      description: 'Full carbon graphite shaft, pre-strung at 24 lbs tension with Yonex BG65 string. Great for inter-hostel matches and evening sports arena play.',
+      category: 'Sports equipment',
+      price: 800,
+      quantity: 0,
+      stock: 0,
+      condition: 'Like New',
+      image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Sports Complex Badminton Court',
+      status: 'RESERVED',
+      reasonForSelling: 'Graduating',
+    });
+
+    const p8 = await Product.create({
+      seller: rahul._id,
+      title: 'GATE CSE Handwritten Revision Notes & Formula Book',
+      description: 'Comprehensive handwritten revision notes covering Algorithms, Operating Systems, DBMS, Theory of Computation, and Computer Networks. Scored AIR 340.',
+      category: 'Notes/study material',
+      price: 300,
+      quantity: 0,
+      stock: 0,
+      condition: 'Like New',
+      image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80',
+      images: ['https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80'],
+      pickupLocation: 'Hostel 5 Gate',
+      status: 'SOLD',
+      reasonForSelling: 'Graduating',
+    });
+
+    console.log('🤝 Seeding Sample Purchase Requests (Purchases & Incoming Requests)...');
+
+    // 1. Rahul's Own Purchases (My Purchases tab)
+    // 1a. Accepted purchase (Demonstrates phone revealed for physical hand-off)
+    await PurchaseRequest.create({
+      product: p4._id, // Engineering Mathematics Book
+      buyer: rahul._id,
+      seller: priya._id,
+      status: 'ACCEPTED',
+      quantity: 1,
+      totalAmount: 450,
+      notes: 'Can meet after 4 PM lecture near Central Library.',
+      pickupLocation: 'Central Library Lawn',
+    });
+
+    // 1b. Pending purchase (Demonstrates phone privacy hidden while waiting for seller)
+    await PurchaseRequest.create({
+      product: p6._id, // Electric Kettle
+      buyer: rahul._id,
+      seller: priya._id,
+      status: 'PENDING',
+      quantity: 1,
+      totalAmount: 350,
+      notes: 'Need this for hostel tea. Can pick up today evening.',
+      pickupLocation: 'Campus Canteen / Dispensary',
+    });
+
+    // 2. Incoming Requests for Rahul's Listings (Incoming Requests tab)
+    // 2a. Pending incoming request from Sneha (Demonstrates seller Accept/Decline actions)
+    await PurchaseRequest.create({
+      product: p1._id, // Casio Calculator
+      buyer: sneha._id,
+      seller: rahul._id,
+      status: 'PENDING',
+      quantity: 1,
+      totalAmount: 650,
+      notes: 'Hi Rahul! Can we meet tomorrow afternoon near the Central Lawn?',
+      pickupLocation: 'Hostel 5 Gate / Central Lawn',
+    });
+
+    // 2b. Accepted incoming request for Yonex Racket
+    await PurchaseRequest.create({
+      product: p7._id, // Yonex Racket
+      buyer: sneha._id,
+      seller: rahul._id,
+      status: 'ACCEPTED',
+      quantity: 1,
+      totalAmount: 800,
+      notes: 'Available to meet at the Sports Complex around 6 PM.',
+      pickupLocation: 'Sports Complex Badminton Court',
+    });
+
+    // 2c. Completed exchange with Amit for GATE Notes
+    await PurchaseRequest.create({
+      product: p8._id, // GATE Notes
+      buyer: amit._id,
+      seller: rahul._id,
+      status: 'COMPLETED',
+      quantity: 1,
+      totalAmount: 300,
+      notes: 'Hand-off done outside Hostel 5. Paid directly in person.',
+      pickupLocation: 'Hostel 5 Gate',
+    });
+
+    console.log('✅ CampusExchange seed finished successfully!');
     return {
-      users: 4,
-      stores: 2,
-      products: products.length,
-      orders: 1,
+      admin: admin.email,
+      students: [rahul.email, priya.email, amit.email, sneha.email],
+      productsSeeded: 8,
+      requestsSeeded: 5,
     };
   } catch (error) {
-    console.error('Seed Database Error:', error);
+    console.error('❌ Seeding error:', error);
     throw error;
   }
 };
